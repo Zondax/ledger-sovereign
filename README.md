@@ -11,9 +11,9 @@ _Please visit our website at [zondax.ch](https://www.zondax.ch)_
 
 ---
 
-This project contains the Sovereign app for Ledger Nano S, Nano S+, X, Stax and Flex.
+This project contains the Sovereign app for Ledger Nano S+, X, Stax and Flex.
 
-- Ledger Nano S/S+/X, Stax and Flex Sovereign app
+- Ledger Nano S+/X, Stax and Flex Sovereign app
 - Specs / Documentation
 - C++ unit tests
 - Zemu tests
