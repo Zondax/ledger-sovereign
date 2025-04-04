@@ -28,24 +28,22 @@
 
 parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize) {
     ctx->offset = 0;
-    ctx->buffer = NULL;
-    ctx->bufferLen = 0;
+    ctx->buffer.ptr = NULL;
+    ctx->buffer.len = 0;
 
     if (bufferSize == 0 || buffer == NULL) {
         // Not available, use defaults
         return parser_init_context_empty;
     }
 
-    ctx->buffer = buffer;
-    ctx->bufferLen = bufferSize;
+    ctx->buffer.ptr = buffer;
+    ctx->buffer.len = bufferSize;
     return parser_ok;
 }
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen, parser_tx_t *tx_obj) {
     CHECK_ERROR(parser_init_context(ctx, data, dataLen))
-    tx_obj->tx_blind_signature.ptr = data;
-    tx_obj->tx_blind_signature.len = dataLen;
-    ctx->tx_obj = tx_obj;
+
     return _read(ctx, tx_obj);
 }
 
@@ -109,8 +107,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint8_t displayIdx, c
         case 1:
             // Display Item 0
             snprintf(outKey, outKeyLen, "Txn");
-            pageStringHex(outVal, outValLen, (char *)ctx->tx_obj->tx_blind_signature.ptr,
-                          ctx->tx_obj->tx_blind_signature.len, pageIdx, pageCount);
+
             return parser_ok;
         default:
             break;

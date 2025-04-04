@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,35 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+
 #pragma once
-
-#include <zxmacros.h>
-
-#include "parser_common.h"
-#include "parser_txdef.h"
-#include "zxtypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define CHECK_INPUT(val)       \
-    if (val == NULL) {         \
-        return parser_no_data; \
-    }
+#include "parser_common.h"
 
-// Checks that there are at least SIZE bytes available in the buffer
-#define CTX_CHECK(CTX, SIZE)                                             \
-    if ((CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->buffer.len) { \
-        return parser_unexpected_buffer_end;                             \
-    }
+parser_error_t checkStack();
+parser_error_t freeStack();
 
-#define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
-    CTX_CHECK((CTX), (SIZE))             \
-    (CTX)->offset += (SIZE);
+parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj);
 
-// #{TODO} --> functions to parse, get, process transaction fields
-parser_error_t _read(parser_context_t *c, parser_tx_t *v);
+// parser_error_t readType(parser_context_t *ctx, RegistryEntry_t *entry);
+// parser_error_t getVariant(parser_context_t *ctx, RegistryEntry_t *type, uint32_t typeId, uint8_t index);
+
+// Helpers
+// parser_error_t checkPathKeyword(Vector_t *path, const char *keyword, bool *found);
+// parser_error_t readSignedExtension(parser_context_t *ctx, SignedExtension_t *extension);
+// parser_error_t getType(parser_context_t *ctx, RegistryEntry_t *type, uint32_t typeId);
+// parser_error_t readField(parser_context_t *ctx, Field_t *entry);
+// parser_error_t readTypeRef(parser_context_t *ctx, TypeRef_t *type);
 
 #ifdef __cplusplus
 }

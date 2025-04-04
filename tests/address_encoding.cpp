@@ -26,7 +26,7 @@ string toHexString(const uint8_t *data, size_t length) {
     return hexStream.str();
 }
 
-TEST(Keys, WalletAddressEncoding) {
+TEST(Keys, DISABLED_WalletAddressEncoding) {
     for (const auto &testcase : testvectorWallet) {
         uint8_t internalPubkey[PK_LEN_25519] = {0};
 

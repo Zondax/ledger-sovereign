@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,35 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+
 #pragma once
-
-#include <zxmacros.h>
-
-#include "parser_common.h"
-#include "parser_txdef.h"
-#include "zxtypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define CHECK_INPUT(val)       \
-    if (val == NULL) {         \
-        return parser_no_data; \
-    }
-
-// Checks that there are at least SIZE bytes available in the buffer
-#define CTX_CHECK(CTX, SIZE)                                             \
-    if ((CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->buffer.len) { \
-        return parser_unexpected_buffer_end;                             \
-    }
-
-#define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
-    CTX_CHECK((CTX), (SIZE))             \
-    (CTX)->offset += (SIZE);
-
-// #{TODO} --> functions to parse, get, process transaction fields
-parser_error_t _read(parser_context_t *c, parser_tx_t *v);
+#include "common_reader.h"
+parser_error_t read_paymaster_call_message(parser_context_t *ctx, paymaster_call_message_t *paymaster);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,35 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+
 #pragma once
-
-#include <zxmacros.h>
-
-#include "parser_common.h"
-#include "parser_txdef.h"
-#include "zxtypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define CHECK_INPUT(val)       \
-    if (val == NULL) {         \
-        return parser_no_data; \
-    }
+#include "borsh.h"
+#include "parser_common.h"
 
-// Checks that there are at least SIZE bytes available in the buffer
-#define CTX_CHECK(CTX, SIZE)                                             \
-    if ((CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->buffer.len) { \
-        return parser_unexpected_buffer_end;                             \
-    }
-
-#define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
-    CTX_CHECK((CTX), (SIZE))             \
-    (CTX)->offset += (SIZE);
-
-// #{TODO} --> functions to parse, get, process transaction fields
-parser_error_t _read(parser_context_t *c, parser_tx_t *v);
+parser_error_t read_amount(parser_context_t *ctx, amount_t *amount);
+parser_error_t read_token_id(parser_context_t *ctx, token_id_t *token_id);
+parser_error_t read_address(parser_context_t *ctx, address_t *address);
+parser_error_t read_coins(parser_context_t *ctx, coins_t *coins);
+parser_error_t read_gas(parser_context_t *ctx, gas_t *gas);
+parser_error_t read_gas_u128(parser_context_t *ctx, gas_u128_t *gas);
 
 #ifdef __cplusplus
 }

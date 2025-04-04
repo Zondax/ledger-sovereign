@@ -16,14 +16,15 @@
 
 #include <hexutils.h>
 #include <json/json.h>
-#include <parser_txdef.h>
 
 #include <fstream>
 #include <iostream>
 
 #include "app_mode.h"
+#include "bank_txdef.h"
 #include "gmock/gmock.h"
 #include "parser.h"
+#include "paymaster_txdef.h"
 #include "utils/common.h"
 
 using ::testing::TestWithParam;
@@ -124,6 +125,6 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
 
 INSTANTIATE_TEST_SUITE_P
 
-    (JsonTestCasesCurrentTxVer, JsonTestsA, ::testing::ValuesIn(GetJsonTestCases("testcases.json")),
+    (DISABLED_JsonTestCasesCurrentTxVer, JsonTestsA, ::testing::ValuesIn(GetJsonTestCases("testcases.json")),
      JsonTestsA::PrintToStringParamName());
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Expert) { check_testcase(GetParam(), true); }

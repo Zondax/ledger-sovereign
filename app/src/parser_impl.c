@@ -16,12 +16,16 @@
 
 #include "parser_impl.h"
 
+#include "metadata_reader.h"
+#include "unsigned_transaction_reader.h"
 #include "zxerror.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     UNUSED(c);
-    UNUSED(v);
-    // #{TODO} --> parse parameters: read from c->buffer and store in v
+
+    CHECK_ERROR(metadata_read(c, v));
+    CHECK_ERROR(unsigned_transaction_read(c, v));
+
     return parser_ok;
 }
 
@@ -35,6 +39,10 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Initialized empty context";
         case parser_unexpected_buffer_end:
             return "Unexpected buffer end";
+        case parser_unexpected_type:
+            return "Unexpected type";
+        case parser_unexpected_method:
+            return "Unexpected method";
         case parser_unexpected_version:
             return "Unexpected version";
         case parser_unexpected_characters:
@@ -49,11 +57,25 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected chain";
         case parser_missing_field:
             return "missing field";
+        case parser_unknown_transaction:
+            return "unknown transaction";
+        case parser_running_out_of_stack:
+            return "running out of stack";
 
         case parser_display_idx_out_of_range:
             return "display index out of range";
         case parser_display_page_out_of_range:
             return "display page out of range";
+        case parser_too_many_schemes:
+            return "too many schemes";
+        case parser_too_many_variants:
+            return "too many variants";
+        case parser_too_many_fields:
+            return "too many fields";
+        case parser_root_type_indices_overflow:
+            return "root type indices overflow";
+        case parser_scheme_indices_overflow:
+            return "scheme indices overflow";
 
         default:
             return "Unrecognized error code";

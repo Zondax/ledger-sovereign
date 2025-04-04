@@ -54,15 +54,14 @@ typedef enum {
     parser_invalid_address,
     parser_unexpected_chain,
     parser_missing_field,
-    paser_unknown_transaction,
+    parser_unknown_transaction,
+    parser_running_out_of_stack,
+    parser_too_many_schemes,
+    parser_too_many_variants,
+    parser_too_many_fields,
+    parser_root_type_indices_overflow,
+    parser_scheme_indices_overflow,
 } parser_error_t;
-
-typedef struct {
-    const uint8_t *buffer;
-    uint16_t bufferLen;
-    uint16_t offset;
-    parser_tx_t *tx_obj;
-} parser_context_t;
 
 #ifdef __cplusplus
 }

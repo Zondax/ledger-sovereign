@@ -15,33 +15,41 @@
  ********************************************************************************/
 #pragma once
 
-#include <zxmacros.h>
-
-#include "parser_common.h"
-#include "parser_txdef.h"
-#include "zxtypes.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define CHECK_INPUT(val)       \
-    if (val == NULL) {         \
-        return parser_no_data; \
-    }
+#include "bank_txdef.h"
+#include "metadata_txdef.h"
+#include "paymaster_txdef.h"
 
-// Checks that there are at least SIZE bytes available in the buffer
-#define CTX_CHECK(CTX, SIZE)                                             \
-    if ((CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->buffer.len) { \
-        return parser_unexpected_buffer_end;                             \
-    }
+typedef struct {
+    uint8_t type;
+    uint64_t call_message_index;
+    union {
+        bank_call_message_t bank;
+        paymaster_call_message_t paymaster;
+    };
+} runtime_t;
 
-#define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
-    CTX_CHECK((CTX), (SIZE))             \
-    (CTX)->offset += (SIZE);
+typedef struct {
+    uint64_t max_priority_fee_bips;
+    amount_t max_fee;
+    bool has_gas_limit;
+    gas_t gas_limit;
+    uint64_t chain_id;
+} tx_details_t;
 
-// #{TODO} --> functions to parse, get, process transaction fields
-parser_error_t _read(parser_context_t *c, parser_tx_t *v);
+typedef struct {
+    runtime_t runtime_call;
+    uint64_t generation;
+    tx_details_t tx_details;
+} unsigned_transaction_t;
+
+typedef struct {
+    schema_t schema;
+    unsigned_transaction_t unsigned_transaction;
+} parser_tx_t;
 
 #ifdef __cplusplus
 }

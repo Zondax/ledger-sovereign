@@ -138,6 +138,12 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/parser.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/parser_impl.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/crypto_helper.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/metadata_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/borsh.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/unsigned_transaction_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/common_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/bank_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/paymaster_reader.c
         )
 
 add_library(app_lib STATIC ${LIB_SRC})
@@ -147,6 +153,8 @@ target_include_directories(app_lib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txdefs
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/picohash
         )
 

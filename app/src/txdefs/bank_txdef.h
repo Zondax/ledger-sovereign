@@ -19,17 +19,43 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
-#include <stdint.h>
+#include "common_txdef.h"
+
+typedef enum {
+    BANK_CALL_MESSAGE_CREATE_TOKEN = 0,
+    BANK_CALL_MESSAGE_TRANSFER,
+    BANK_CALL_MESSAGE_BURN,
+    BANK_CALL_MESSAGE_MINT,
+    BANK_CALL_MESSAGE_FREEZE,
+} bank_call_message_e;
 
 typedef struct {
-    const uint8_t *ptr;
-    uint16_t len;
-} bytes_t;
+    address_t to;
+    coins_t coins;
+} bank_transfer_t;
 
 typedef struct {
-    bytes_t tx_blind_signature;
-} parser_tx_t;
+    coins_t coins;
+} bank_burn_t;
+
+typedef struct {
+    coins_t coins;
+    address_t mint_to_address;
+} bank_mint_t;
+
+typedef struct {
+    token_id_t token_id;
+} bank_freeze_t;
+
+typedef struct {
+    bank_call_message_e type;
+    union {
+        bank_transfer_t transfer;
+        bank_burn_t burn;
+        bank_mint_t mint;
+        bank_freeze_t freeze;
+    };
+} bank_call_message_t;
 
 #ifdef __cplusplus
 }
