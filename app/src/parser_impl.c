@@ -15,13 +15,15 @@
  ********************************************************************************/
 
 #include "parser_impl.h"
+#include "metadata_reader.h"
 
 #include "zxerror.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     UNUSED(c);
-    UNUSED(v);
-    // #{TODO} --> parse parameters: read from c->buffer and store in v
+    
+    CHECK_ERROR(metadata_read(c, v));
+
     return parser_ok;
 }
 
@@ -49,6 +51,10 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected chain";
         case parser_missing_field:
             return "missing field";
+        case parser_unknown_transaction:
+            return "unknown transaction";
+        case parser_running_out_of_stack:
+            return "running out of stack";
 
         case parser_display_idx_out_of_range:
             return "display index out of range";

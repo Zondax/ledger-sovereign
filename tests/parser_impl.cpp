@@ -33,11 +33,8 @@ TEST(SCALE, ReadBytes) {
     parser_context_t ctx;
     parser_tx_t tx_obj;
     parser_error_t err;
-    uint8_t buffer[100];
-    auto bufferLen = parseHexString(buffer, sizeof(buffer),
-                                    "45"
-                                    "123456"
-                                    "12345678901234567890");
+    uint8_t buffer[500];
+    auto bufferLen = parseHexString(buffer, sizeof(buffer),"0100000001180000004e65737465644e65737465644e6573746564537472756374000000010000000c0000006e335f6669656c645f6f6e6500010005010000000001000000000000000000000000000000000000000000000014388ab466781677a95315fdc6f6c655765799664b8c5a3ac6263fbecb544014");    
 
     parser_parse(&ctx, buffer, bufferLen, &tx_obj);
 

@@ -54,7 +54,8 @@ typedef enum {
     parser_invalid_address,
     parser_unexpected_chain,
     parser_missing_field,
-    paser_unknown_transaction,
+    parser_unknown_transaction,
+    parser_running_out_of_stack
 } parser_error_t;
 
 typedef struct {

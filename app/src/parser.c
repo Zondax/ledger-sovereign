@@ -43,9 +43,9 @@ parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer,
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen, parser_tx_t *tx_obj) {
     CHECK_ERROR(parser_init_context(ctx, data, dataLen))
-    tx_obj->tx_blind_signature.ptr = data;
-    tx_obj->tx_blind_signature.len = dataLen;
+
     ctx->tx_obj = tx_obj;
+
     return _read(ctx, tx_obj);
 }
 
@@ -109,8 +109,7 @@ parser_error_t parser_getItem(const parser_context_t *ctx, uint8_t displayIdx, c
         case 1:
             // Display Item 0
             snprintf(outKey, outKeyLen, "Txn");
-            pageStringHex(outVal, outValLen, (char *)ctx->tx_obj->tx_blind_signature.ptr,
-                          ctx->tx_obj->tx_blind_signature.len, pageIdx, pageCount);
+
             return parser_ok;
         default:
             break;

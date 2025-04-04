@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,35 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+
 #pragma once
-
-#include <zxmacros.h>
-
-#include "parser_common.h"
-#include "parser_txdef.h"
-#include "zxtypes.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define CHECK_INPUT(val)          \
-    if (val == NULL) {         \
-        return parser_no_data; \
-    }  
+#include <sigutils.h>
+#include <stdbool.h>
 
-// Checks that there are at least SIZE bytes available in the buffer
-#define CTX_CHECK(CTX, SIZE)                                            \
-    if ((CTX) == NULL || ((CTX)->offset + (SIZE)) > (CTX)->bufferLen) { \
-        return parser_unexpected_buffer_end;                            \
-    }
+#include "coin.h"
+#include "zxerror.h"
+#include "zxmacros.h"
 
-#define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
-    CTX_CHECK((CTX), (SIZE))       \
-    (CTX)->offset += (SIZE);
+typedef enum {
+    BORSH_TYPE_U8,
+    BORSH_TYPE_U32,
+    BORSH_TYPE_STRING,
+    BORSH_TYPE_STRUCT,
+    BORSH_TYPE_ENUM,
+    // Add other types as needed
+} borsh_type_t;
 
-// #{TODO} --> functions to parse, get, process transaction fields
-parser_error_t _read(parser_context_t *c, parser_tx_t *v);
+parser_error_t read_u32(parser_context_t* ctx, uint32_t* val);
 
 #ifdef __cplusplus
 }
