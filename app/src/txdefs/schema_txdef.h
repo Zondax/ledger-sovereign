@@ -20,11 +20,14 @@ extern "C" {
 #endif
 
 #include "common_txdef.h"
+#include "merkle_txdef.h"
 
 #define MAX_FIELDS_QTY 20
 #define MAX_VARIANTS_QTY 20
 #define MAX_HRP_LEN 83
 #define MAX_SCHEMES_QTY 200
+#define MAX_NAME_REGISTRIES_QTY 5
+#define MAX_REGISTRIES_QTY 5
 
 typedef enum {
     ROLLUP_ROOTS_TRANSACTION = 0,
@@ -147,10 +150,14 @@ typedef struct {
 typedef struct {
     uint64_t len;
     byte_display_t display;
+    bool has_name_registry;
+    bytes_t name_registry;
 } primitive_byte_array_t;
 
 typedef struct {
     byte_display_t display;
+    bool has_name_registry;
+    bytes_t name_registry;
 } primitive_byte_vec_t;
 
 typedef struct {
@@ -267,9 +274,26 @@ typedef struct {
 } root_type_indices_t;
 
 typedef struct {
+    bytes_t data;
+    bytes_t name;
+} registry_t;
+
+typedef struct {
+    bytes_t name;
+    uint32_t qty;
+    registry_t registry[MAX_REGISTRIES_QTY];
+} name_registry_t;
+
+typedef struct {
+    uint32_t qty;
+    name_registry_t vec_registries[MAX_NAME_REGISTRIES_QTY];
+} name_registries_t;
+
+typedef struct {
     uint64_t chain_id;
     bytes_t chain_name;
     uint8_t gas_token_decimals;
+    name_registries_t name_registries;
 } chain_data_t;
 
 typedef struct {

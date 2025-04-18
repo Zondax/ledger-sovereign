@@ -16,15 +16,16 @@
 
 #include "parser_impl.h"
 
-#include "metadata_reader.h"
+#include "schema_reader.h"
 #include "unsigned_transaction_reader.h"
 #include "zxerror.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     UNUSED(c);
 
-    CHECK_ERROR(metadata_read(c, v));
-    CHECK_ERROR(unsigned_transaction_read(c, v));
+    // CHECK_ERROR(metadata_read(c, v));
+    // CHECK_ERROR(unsigned_transaction_read(c, v));
+    CHECK_ERROR(merkle_proofs_read(c, v));
 
     return parser_ok;
 }
@@ -76,6 +77,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "root type indices overflow";
         case parser_scheme_indices_overflow:
             return "scheme indices overflow";
+        case parser_unexpected_root_hash:
+            return "unexpected root hash";
 
         default:
             return "Unrecognized error code";

@@ -48,7 +48,7 @@ parser_error_t read_address(parser_context_t *ctx, address_t *address) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(address);
 
-    CHECK_ERROR(read_u8(ctx, &address->type));
+    CHECK_ERROR(read_u8(ctx, (uint8_t *)&address->type));
     print_u8("address type", address->type);
 
     address->address.len = ADDRESS_SIZE;

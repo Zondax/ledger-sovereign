@@ -33,6 +33,21 @@ void print_buffer(bytes_t *buffer, const char *title) {
 #endif
 }
 
+void print_buffer_u8(bytes_t *buffer, const char *title) {
+#if defined(LEDGER_SPECIFIC)
+    ZEMU_LOGF(50, "%s\n", title);
+    char print[1000] = {0};
+    array_to_hexstr(print, sizeof(print), buffer->ptr, buffer->len);
+    ZEMU_LOGF(1000, "%s\n", print);
+#else
+    printf("%s %d: [", title, buffer->len);
+    for (uint16_t i = 0; i < buffer->len; i++) {
+        printf("%d, ", buffer->ptr[i]);
+    }
+    printf("]\n");
+#endif
+}
+
 void print_buffer_str(bytes_t *buffer, const char *title) {
 #if defined(LEDGER_SPECIFIC)
     ZEMU_LOGF(50, "%s\n", title);

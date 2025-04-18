@@ -74,7 +74,7 @@ parser_error_t read_payee_policy_list(parser_context_t *ctx, payee_policy_list_t
 
     CHECK_ERROR(read_u32(ctx, &payees->length));
     print_u32("payees list length:", payees->length);
-    for (int i = 0; i < payees->length; i++) {
+    for (int i = 0; i < (int)payees->length; i++) {
         CHECK_ERROR(read_address(ctx, &payees->pairs[i].address));
         CHECK_ERROR(read_payee_policy(ctx, &payees->pairs[i].policy));
     }
@@ -87,7 +87,7 @@ parser_error_t read_authorized_updaters(parser_context_t *ctx, address_list_t *u
 
     CHECK_ERROR(read_u32(ctx, &updaters->length));
     print_u32("authorized updaters length:", updaters->length);
-    for (int i = 0; i < updaters->length; i++) {
+    for (int i = 0; i < (int)updaters->length; i++) {
         CHECK_ERROR(read_address(ctx, &updaters->address[i]));
     }
     return parser_ok;

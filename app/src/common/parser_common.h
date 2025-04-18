@@ -61,6 +61,7 @@ typedef enum {
     parser_too_many_fields,
     parser_root_type_indices_overflow,
     parser_scheme_indices_overflow,
+    parser_unexpected_root_hash,
 } parser_error_t;
 
 #ifdef __cplusplus

@@ -14,9 +14,11 @@
  *  limitations under the License.
  ********************************************************************************/
 
-#include "metadata_reader.h"
+#include "schema_reader.h"
 
 #include "borsh.h"
+#include "crypto_helper.h"
+#include "schema_proof.h"
 
 #if defined(TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX) || defined(TARGET_FLEX)
 #define STACK_SHIFT 20
@@ -217,6 +219,46 @@ parser_error_t read_primitive_byte_array(parser_context_t *ctx, primitive_byte_a
     // read display
     CHECK_ERROR(read_byte_display(ctx, &primitive->display));
 
+    // read has_name_registry
+    CHECK_ERROR(read_u8(ctx, (uint8_t *)&primitive->has_name_registry));
+    print_u8("has_name_registry:", primitive->has_name_registry);
+
+    // read name_registry
+    if (primitive->has_name_registry) {
+        CHECK_ERROR(read_u32(ctx, (uint32_t *)&primitive->name_registry.len));
+        if (primitive->name_registry.len > 0) {
+            primitive->name_registry.ptr = ctx->buffer.ptr + ctx->offset;
+            CTX_CHECK_AND_ADVANCE(ctx, primitive->name_registry.len);
+        }
+        print_buffer(&primitive->name_registry, "name_registry");
+        print_buffer_str(&primitive->name_registry, "name_registry_str");
+    }
+
+    return parser_ok;
+}
+
+parser_error_t read_primitive_byte_vec(parser_context_t *ctx, primitive_byte_vec_t *primitive) {
+    CHECK_INPUT(primitive);
+    CHECK_INPUT(ctx);
+
+    // read display
+    CHECK_ERROR(read_byte_display(ctx, &primitive->display));
+
+    // read has_name_registry
+    CHECK_ERROR(read_u8(ctx, (uint8_t *)&primitive->has_name_registry));
+    print_u8("has_name_registry:", primitive->has_name_registry);
+
+    // read name_registry
+    if (primitive->has_name_registry) {
+        CHECK_ERROR(read_u32(ctx, (uint32_t *)&primitive->name_registry.len));
+        if (primitive->name_registry.len > 0) {
+            primitive->name_registry.ptr = ctx->buffer.ptr + ctx->offset;
+            CTX_CHECK_AND_ADVANCE(ctx, primitive->name_registry.len);
+        }
+        print_buffer(&primitive->name_registry, "name_registry");
+        print_buffer_str(&primitive->name_registry, "name_registry_str");
+    }
+
     return parser_ok;
 }
 
@@ -240,7 +282,7 @@ parser_error_t read_immediate(parser_context_t *ctx, primitive_t *primitive) {
             break;
         case PRIMITIVE_BYTE_VEC:
             print_string("Primitive byte vec");
-            CHECK_ERROR(read_byte_display(ctx, &primitive->byte_vec.display));
+            CHECK_ERROR(read_primitive_byte_vec(ctx, &primitive->byte_vec));
             break;
         case PRIMITIVE_FLOAT32:
             print_string("Primitive float32");
@@ -573,6 +615,67 @@ parser_error_t read_root_type_indices(parser_context_t *ctx, root_type_indices_t
     return parser_ok;
 }
 
+parser_error_t read_registry(parser_context_t *ctx, registry_t *registry) {
+    CHECK_INPUT(registry);
+    CHECK_INPUT(ctx);
+    // read data
+    CHECK_ERROR(read_u32(ctx, (uint32_t *)&registry->data.len));
+    if (registry->data.len > 0) {
+        registry->data.ptr = ctx->buffer.ptr + ctx->offset;
+        CTX_CHECK_AND_ADVANCE(ctx, registry->data.len);
+        print_buffer(&registry->data, "registry.data");
+    }
+    // read name
+    CHECK_ERROR(read_u32(ctx, (uint32_t *)&registry->name.len));
+    if (registry->name.len > 0) {
+        registry->name.ptr = ctx->buffer.ptr + ctx->offset;
+        CTX_CHECK_AND_ADVANCE(ctx, registry->name.len);
+        print_buffer(&registry->name, "registry.name");
+        print_buffer_str(&registry->name, "registry.name_str");
+    }
+
+    return parser_ok;
+}
+
+parser_error_t read_name_registry(parser_context_t *ctx, name_registry_t *name_registry) {
+    CHECK_INPUT(name_registry);
+    CHECK_INPUT(ctx);
+
+    // read name
+    CHECK_ERROR(read_u32(ctx, (uint32_t *)&name_registry->name.len));
+    if (name_registry->name.len > 0) {
+        name_registry->name.ptr = ctx->buffer.ptr + ctx->offset;
+        CTX_CHECK_AND_ADVANCE(ctx, name_registry->name.len);
+        print_buffer(&name_registry->name, "name_registry.name");
+        print_buffer_str(&name_registry->name, "name_registry.name_str");
+    }
+
+    // read qty
+    CHECK_ERROR(read_u32(ctx, &name_registry->qty));
+    print_u32("name_registry.qty:", name_registry->qty);
+
+    // read registries
+    for (uint32_t i = 0; i < name_registry->qty; i++) {
+        CHECK_ERROR(read_registry(ctx, &name_registry->registry[i]));
+    }
+    return parser_ok;
+}
+
+parser_error_t read_name_registries(parser_context_t *ctx, name_registries_t *name_registries) {
+    CHECK_INPUT(name_registries);
+    CHECK_INPUT(ctx);
+
+    // read qty
+    CHECK_ERROR(read_u32(ctx, &name_registries->qty));
+    print_u32("name_registries.qty:", name_registries->qty);
+
+    // read registries
+    for (uint32_t i = 0; i < name_registries->qty; i++) {
+        CHECK_ERROR(read_name_registry(ctx, &name_registries->vec_registries[i]));
+    }
+    return parser_ok;
+}
+
 parser_error_t read_chain_data(parser_context_t *ctx, chain_data_t *chain_data) {
     CHECK_INPUT(chain_data);
     CHECK_INPUT(ctx);
@@ -593,6 +696,9 @@ parser_error_t read_chain_data(parser_context_t *ctx, chain_data_t *chain_data) 
     // read gas_token_decimals
     CHECK_ERROR(read_u8(ctx, &chain_data->gas_token_decimals));
     print_u8("chain_data.gas_token_decimals:", chain_data->gas_token_decimals);
+
+    // read name_registries
+    CHECK_ERROR(read_name_registries(ctx, &chain_data->name_registries));
 
     return parser_ok;
 }
@@ -690,183 +796,212 @@ parser_error_t read_schema_type(parser_context_t *ctx, uint8_t type) {
     return parser_ok;
 }
 
-parser_error_t get_enum_runtime_call_link_index(schema_enum_t *schema_enum, uint32_t field_index[], uint16_t *qty, uint16_t max_indexes) {
-    CHECK_INPUT(schema_enum);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-    
-    for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
-        if (schema_enum->variants[i].discriminant == RUNTIME_CALL_BANK) {
-            if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
-                field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
-            }
-        }
-    }
+// parser_error_t get_enum_runtime_call_link_index(schema_enum_t *schema_enum, uint32_t field_index[], uint16_t *qty,
+// uint16_t max_indexes) {
+//     CHECK_INPUT(schema_enum);
+//     CHECK_INPUT(field_index);
+//     CHECK_INPUT(qty);
 
-    return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-}   
+//     for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
+//         if (schema_enum->variants[i].discriminant == RUNTIME_CALL_BANK) {
+//             if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
+//                 field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
+//             }
+//         }
+//     }
 
-parser_error_t get_enum_link_index(schema_enum_t *schema_enum, uint64_t field_index[], uint16_t *qty, uint16_t max_indexes) {
-    CHECK_INPUT(schema_enum);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-    
-    for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
-        if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
-            field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
-        }
-    }
+//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
+// }
 
-    return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-}   
+// parser_error_t get_enum_transfer_index(schema_enum_t *schema_enum, uint32_t field_index[], uint16_t *qty, uint16_t
+// max_indexes) {
+//     CHECK_INPUT(schema_enum);
+//     CHECK_INPUT(field_index);
+//     CHECK_INPUT(qty);
 
-parser_error_t get_struct_link_index(schema_struct_t *schema_struct, uint32_t field_index[], uint16_t *qty, uint16_t max_indexes) {
-    CHECK_INPUT(schema_struct);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
+//     for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
+//         if (schema_enum->variants[i].discriminant == BANK_CALL_MESSAGE_TRANSFER) {
+//             if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
+//                 field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
+//             }
+//         }
+//     }
 
-    named_field_t *field = schema_struct->fields;
-    named_field_t *end = field + schema_struct->fields_qty;
-    
-    while (field < end && *qty < max_indexes) {
-        if (field->value.tag == LINK_BY_INDEX) {
-            field_index[(*qty)++] = field->value.data.by_index;
-        }
-        field++;
-    }
+//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
+// }
 
-    return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-}
+// parser_error_t get_enum_link_index(schema_enum_t *schema_enum, uint64_t field_index[], uint16_t *qty, uint16_t
+// max_indexes) {
+//     CHECK_INPUT(schema_enum);
+//     CHECK_INPUT(field_index);
+//     CHECK_INPUT(qty);
 
-parser_error_t get_tuple_link_index(schema_tuple_t *schema_tuple, uint32_t field_index[], uint16_t *qty, uint16_t max_indexes) {
-    CHECK_INPUT(schema_tuple);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-    
-    for (uint32_t i = 0; i < schema_tuple->fields_qty; i++) {
-        if (schema_tuple->fields[i].value.tag == LINK_BY_INDEX) {
-            field_index[(*qty)++] = schema_tuple->fields[i].value.data.by_index;
-        }
-    }
+//     for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
+//         if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
+//             field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
+//         }
+//     }
 
-    return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok; 
-}
+//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
+// }
 
-parser_error_t get_schema_indexes_recursive(parser_tx_t *txObj, uint32_t index, uint32_t runtime_call_index, uint32_t field_index[], uint16_t *qty, uint8_t *visited, uint16_t max_indexes) {
-    CHECK_INPUT(txObj);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-    CHECK_INPUT(visited);
+// parser_error_t get_struct_link_index(schema_struct_t *schema_struct, uint32_t field_index[], uint16_t *qty, uint16_t
+// max_indexes) {
+//     CHECK_INPUT(schema_struct);
+//     CHECK_INPUT(field_index);
+//     CHECK_INPUT(qty);
 
-    // Check array bounds and visited status
-    if (index >= MAX_SCHEMES_QTY || *qty >= max_indexes) {
-        return parser_unexpected_error;
-    }
+//     named_field_t *field = schema_struct->fields;
+//     named_field_t *end = field + schema_struct->fields_qty;
 
-    // Check if we've already visited this index
-    if (visited[index]) {
-        return parser_ok;
-    }
-    visited[index] = 1;
+//     while (field < end && *qty < max_indexes) {
+//         if (field->value.tag == LINK_BY_INDEX) {
+//             field_index[(*qty)++] = field->value.data.by_index;
+//         }
+//         field++;
+//     }
 
-    // Get linking scheme data
-    linking_scheme_t *scheme = &txObj->schema.types.schemes[index];
-    print_u32("SEARCHING index:", index);
-    print_u8("scheme->type:", scheme->type);
+//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
+// }
 
-    uint16_t current_qty = *qty;
-    switch (scheme->type) {
-        case LINKING_SCHEME_ENUM: {
-            schema_enum_t enum_type = {0};
-            CHECK_ERROR(read_enum(&scheme->data, &enum_type));
-            if (index == runtime_call_index) {
-                CHECK_ERROR(get_enum_runtime_call_link_index(&enum_type, field_index, qty, max_indexes));
-            } else if (index == 4) {
-                CHECK_ERROR(get_enum_link_index(&enum_type, field_index, qty, max_indexes));
-            }
-            break;
-        }
-        case LINKING_SCHEME_STRUCT: {
-            schema_struct_t struct_type = {0};
-            CHECK_ERROR(read_struct(&scheme->data, &struct_type));
-            CHECK_ERROR(get_struct_link_index(&struct_type, field_index, qty, max_indexes));
-            break;
-        }
-        case LINKING_SCHEME_TUPLE: {
-            schema_tuple_t tuple_type = {0};
-            CHECK_ERROR(read_tuple(&scheme->data, &tuple_type));
-            CHECK_ERROR(get_tuple_link_index(&tuple_type, field_index, qty, max_indexes));
-            break;
-        }
+// parser_error_t get_tuple_link_index(schema_tuple_t *schema_tuple, uint32_t field_index[], uint16_t *qty, uint16_t
+// max_indexes) {
+//     CHECK_INPUT(schema_tuple);
+//     CHECK_INPUT(field_index);
+//     CHECK_INPUT(qty);
 
-        default:
-            break;
-    }
+//     for (uint32_t i = 0; i < schema_tuple->fields_qty; i++) {
+//         if (schema_tuple->fields[i].value.tag == LINK_BY_INDEX) {
+//             field_index[(*qty)++] = schema_tuple->fields[i].value.data.by_index;
+//         }
+//     }
 
-    for (uint16_t i = current_qty; i < *qty && i < max_indexes; i++) {
-        print_u32("Recursive Local field_index:", field_index[i]);
-    }
+//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
+// }
 
-    for (uint16_t i = current_qty; i < *qty && i < max_indexes; i++) {
-        CHECK_ERROR(get_schema_indexes_recursive(txObj, field_index[i], runtime_call_index, field_index, qty, visited, max_indexes));
-    }
+// parser_error_t get_schema_indexes_recursive(parser_tx_t *txObj, uint32_t index, uint32_t runtime_call_index, uint32_t
+// field_index[], uint16_t *qty, uint8_t *visited, uint16_t max_indexes) {
+//     CHECK_INPUT(txObj);
+//     CHECK_INPUT(field_index);
+//     CHECK_INPUT(qty);
+//     CHECK_INPUT(visited);
 
-    return parser_ok;
-}
+//     // Check array bounds and visited status
+//     if (index >= MAX_SCHEMES_QTY || *qty >= max_indexes) {
+//         return parser_unexpected_error;
+//     }
 
-parser_error_t get_schema_unsigned_transaction_index(parser_tx_t *txObj, uint8_t *indices, uint32_t qty) {
-    CHECK_INPUT(indices);
-    CHECK_INPUT(txObj);
+//     // Check if we've already visited this index
+//     if (visited[index]) {
+//         return parser_ok;
+//     }
+//     visited[index] = 1;
 
-    // Get root index
-    if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_UNSIGNED_TRANSACTION || txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_RUNTIME_CALL) {
-        return parser_root_type_indices_overflow;
-    }
+//     // Get linking scheme data
+//     linking_scheme_t *scheme = &txObj->schema.types.schemes[index];
+//     print_u32("SEARCHING index:", index);
+//     print_u8("scheme->type:", scheme->type);
 
-    uint32_t root_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_UNSIGNED_TRANSACTION];
-    uint32_t runtime_call_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_RUNTIME_CALL];
+//     uint16_t current_qty = *qty;
+//     switch (scheme->type) {
+//         case LINKING_SCHEME_ENUM: {
+//             schema_enum_t enum_type = {0};
+//             CHECK_ERROR(read_enum(&scheme->data, &enum_type));
+//             if (index == runtime_call_index) {
+//                 CHECK_ERROR(get_enum_runtime_call_link_index(&enum_type, field_index, qty, max_indexes));
+//             } else if (index == 4) {
+//                 CHECK_ERROR(get_enum_link_index(&enum_type, field_index, qty, max_indexes));
+//             } else if (index == 5) {
+//                 CHECK_ERROR(get_enum_transfer_index(&enum_type, field_index, qty, max_indexes));
+//             } else {
+//                 CHECK_ERROR(get_enum_link_index(&enum_type, field_index, qty, max_indexes));
+//             }
+//             break;
+//         }
+//         case LINKING_SCHEME_STRUCT: {
+//             schema_struct_t struct_type = {0};
+//             CHECK_ERROR(read_struct(&scheme->data, &struct_type));
+//             CHECK_ERROR(get_struct_link_index(&struct_type, field_index, qty, max_indexes));
+//             break;
+//         }
+//         case LINKING_SCHEME_TUPLE: {
+//             schema_tuple_t tuple_type = {0};
+//             CHECK_ERROR(read_tuple(&scheme->data, &tuple_type));
+//             CHECK_ERROR(get_tuple_link_index(&tuple_type, field_index, qty, max_indexes));
+//             break;
+//         }
 
-    if (root_index > txObj->schema.types.qty || runtime_call_index > txObj->schema.types.qty) {
-        return parser_scheme_indices_overflow;
-    }
-    print_u32("root_index:", root_index);
-    print_u32("runtime_call_index:", runtime_call_index);
+//         default:
+//             break;
+//     }
 
-    uint32_t field_index[MAX_FIELDS_QTY] = {0};
-    uint16_t field_count = 0;
-    uint8_t visited[MAX_SCHEMES_QTY] = {0};
+//     for (uint16_t i = current_qty; i < *qty && i < max_indexes; i++) {
+//         print_u32("Recursive Local field_index:", field_index[i]);
+//     }
 
-    CHECK_ERROR(get_schema_indexes_recursive(txObj, root_index, runtime_call_index, field_index, &field_count, visited, MAX_FIELDS_QTY));
+//     for (uint16_t i = current_qty; i < *qty && i < max_indexes; i++) {
+//         CHECK_ERROR(get_schema_indexes_recursive(txObj, field_index[i], runtime_call_index, field_index, qty, visited,
+//         max_indexes));
+//     }
 
-    for (uint32_t i = 0; i < field_count; i++) {
-        print_u32("field_index:", field_index[i]);
-    }
+//     return parser_ok;
+// }
 
-    return parser_ok;
-}
+// parser_error_t get_schema_unsigned_transaction_index(parser_tx_t *txObj, uint8_t *indices, uint32_t qty) {
+//     CHECK_INPUT(indices);
+//     CHECK_INPUT(txObj);
 
-parser_error_t get_call_message_index(parser_tx_t *txObj) {
-    CHECK_INPUT(txObj);
+//     // Get root index
+//     if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_UNSIGNED_TRANSACTION || txObj->schema.root_type_indices.qty <=
+//     ROLLUP_ROOTS_RUNTIME_CALL) {
+//         return parser_root_type_indices_overflow;
+//     }
 
-    // Get root index
-    if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_RUNTIME_CALL) {
-        return parser_root_type_indices_overflow;
-    }
+//     uint32_t root_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_UNSIGNED_TRANSACTION];
+//     uint32_t runtime_call_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_RUNTIME_CALL];
 
-    uint32_t runtime_call_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_RUNTIME_CALL];
+//     if (root_index > txObj->schema.types.qty || runtime_call_index > txObj->schema.types.qty) {
+//         return parser_scheme_indices_overflow;
+//     }
+//     print_u32("root_index:", root_index);
+//     print_u32("runtime_call_index:", runtime_call_index);
 
-    if (runtime_call_index > txObj->schema.types.qty) {
-        return parser_scheme_indices_overflow;
-    }
+//     uint32_t field_index[MAX_FIELDS_QTY] = {0};
+//     uint16_t field_count = 0;
+//     uint8_t visited[MAX_SCHEMES_QTY] = {0};
 
-    uint16_t field_count = 0;
-    schema_enum_t enum_type = {0};
-    CHECK_ERROR(read_enum(&txObj->schema.types.schemes[runtime_call_index].data, &enum_type));
-    txObj->schema.types.schemes[runtime_call_index].data.offset = 0;
-    CHECK_ERROR(get_enum_link_index(&enum_type, &txObj->schema.call_message_index, &field_count, MAX_FIELDS_QTY));
+//     CHECK_ERROR(get_schema_indexes_recursive(txObj, root_index, runtime_call_index, field_index, &field_count, visited,
+//     MAX_FIELDS_QTY));
 
-    return parser_ok;
-}
+//     for (uint32_t i = 0; i < field_count; i++) {
+//         print_u32("field_index:", field_index[i]);
+//     }
+
+//     return parser_ok;
+// }
+
+// parser_error_t get_call_message_index(parser_tx_t *txObj) {
+//     CHECK_INPUT(txObj);
+
+//     // Get root index
+//     if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_RUNTIME_CALL) {
+//         return parser_root_type_indices_overflow;
+//     }
+
+//     uint32_t runtime_call_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_RUNTIME_CALL];
+
+//     if (runtime_call_index > txObj->schema.types.qty) {
+//         return parser_scheme_indices_overflow;
+//     }
+
+//     uint16_t field_count = 0;
+//     schema_enum_t enum_type = {0};
+//     CHECK_ERROR(read_enum(&txObj->schema.types.schemes[runtime_call_index].data, &enum_type));
+//     txObj->schema.types.schemes[runtime_call_index].data.offset = 0;
+//     CHECK_ERROR(get_enum_link_index(&enum_type, &txObj->schema.call_message_index, &field_count, MAX_FIELDS_QTY));
+
+//     return parser_ok;
+// }
 
 parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
@@ -880,9 +1015,9 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
 
     for (uint32_t i = 0; i < txObj->schema.types.qty; i++) {
         // read type
-        CHECK_ERROR(read_u8(ctx, (uint8_t *)&txObj->schema.types.schemes[i].type));
-        uint16_t offset_mem = ctx->offset;
         const uint8_t *ptr_mem = ctx->buffer.ptr + ctx->offset;
+        uint16_t offset_mem = ctx->offset;
+        CHECK_ERROR(read_u8(ctx, (uint8_t *)&txObj->schema.types.schemes[i].type));
         CHECK_ERROR(read_schema_type(ctx, txObj->schema.types.schemes[i].type));
         txObj->schema.types.schemes[i].data.buffer.ptr = ptr_mem;
         txObj->schema.types.schemes[i].data.buffer.len = ctx->offset - offset_mem;
@@ -908,11 +1043,76 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
         print_string("Successfully parsed metadata\n");
     }
 
-    CHECK_ERROR(get_call_message_index(txObj));
+    return parser_ok;
+}
 
-    print_string("SEARCHING UNSIGNED TRANSACTION INDEX:");
-    uint8_t indices[1] = {0};
-    CHECK_ERROR(get_schema_unsigned_transaction_index(txObj, indices, 1));
+// | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash) |
+parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
+    CHECK_INPUT(txObj);
+
+    // read leaf data
+    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proofs.leaves.entries));
+    print_u32("leaves.qty:", txObj->merkle_proofs.leaves.entries);
+    const uint8_t *ptr_mem = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem = ctx->offset;
+    for (uint32_t i = 0; i < txObj->merkle_proofs.leaves.entries; i++) {
+        uint32_t length = 0;
+        CHECK_ERROR(read_u32(ctx, &length));
+        print_u32("length:", length);
+        uint8_t schema_type = 0;
+        CHECK_ERROR(read_u8(ctx, (uint8_t *)&schema_type));
+        print_u8("schema.type:", schema_type);
+        CHECK_ERROR(read_schema_type(ctx, schema_type));
+    }
+    txObj->merkle_proofs.leaves.data.buffer.ptr = ptr_mem;
+    txObj->merkle_proofs.leaves.data.buffer.len = ctx->offset - offset_mem;
+    print_buffer(&txObj->merkle_proofs.leaves.data.buffer, "leaves data");
+
+    // read indices
+    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proofs.indices.entries));
+    print_u32("indices.qty:", txObj->merkle_proofs.indices.entries);
+    if (txObj->merkle_proofs.indices.entries != txObj->merkle_proofs.leaves.entries) {
+        return parser_unexpected_error;
+    }
+    const uint8_t *ptr_mem_indices = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem_indices = ctx->offset;
+    for (uint32_t i = 0; i < txObj->merkle_proofs.indices.entries; i++) {
+        uint64_t index = 0;
+        CHECK_ERROR(read_u64(ctx, &index));
+        print_u64("index:", index);
+    }
+    txObj->merkle_proofs.indices.indices.buffer.ptr = ptr_mem_indices;
+    txObj->merkle_proofs.indices.indices.buffer.len = ctx->offset - offset_mem_indices;
+    print_buffer(&txObj->merkle_proofs.indices.indices.buffer, "indices");
+
+    // read lemmas
+    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proofs.lemmas.entries));
+    print_u32("lemmas.qty:", txObj->merkle_proofs.lemmas.entries);
+    txObj->merkle_proofs.lemmas.data.buffer.ptr = ctx->buffer.ptr + ctx->offset;
+    txObj->merkle_proofs.lemmas.data.buffer.len = txObj->merkle_proofs.lemmas.entries * 32;
+    CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proofs.lemmas.data.buffer.len);
+    print_buffer(&txObj->merkle_proofs.lemmas.data.buffer, "lemmas");
+
+    // read tree_size
+    CHECK_ERROR(read_u64(ctx, &txObj->merkle_proofs.tree_size));
+    print_u64("tree_size:", txObj->merkle_proofs.tree_size);
+
+    // read root_hash
+    txObj->merkle_proofs.root_hash.ptr = ctx->buffer.ptr + ctx->offset;
+    txObj->merkle_proofs.root_hash.len = 32;
+    CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proofs.root_hash.len);
+    print_buffer(&txObj->merkle_proofs.root_hash, "root_hash");
+
+    // TODO: check that we have consumed all data
+    if (ctx->offset != ctx->buffer.len) {
+        print_string("Failed to parse metadata\n");
+        return parser_unexpected_error;
+    } else {
+        print_string("Successfully parsed metadata\n");
+    }
+
+    CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proofs));
 
     return parser_ok;
 }

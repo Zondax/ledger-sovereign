@@ -28,9 +28,13 @@ extern "C" {
 #include "zxmacros.h"
 
 #define PUBKEY_SHA_LEN 28
+#define CX_SHA256_SIZE 32
 #define HRP "sov"
 
-zxerr_t crypto_computeSha256(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen);
+zxerr_t crypto_sha256_init();
+zxerr_t crypto_sha256_update(const uint8_t *input, uint16_t inputLen);
+zxerr_t crypto_sha256_final(uint8_t *output);
+zxerr_t crypto_sha256_one_shot(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen);
 zxerr_t crypto_computeAddress(uint8_t *address, uint16_t addressLen, const uint8_t *pubkey);
 
 #ifdef __cplusplus

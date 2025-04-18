@@ -76,6 +76,7 @@ VARIANT_PARAM=COIN
 VARIANT_VALUES=$(COIN)
 
 INCLUDES_PATH += $(CURDIR)/src/common
+INCLUDES_PATH += $(BOLOS_SDK)/lib_cxng/src
 
 ########################################
 # Application communication interfaces #

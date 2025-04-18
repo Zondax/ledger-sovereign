@@ -138,12 +138,13 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/parser.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/parser_impl.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/crypto_helper.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/metadata_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_reader.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/borsh.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/unsigned_transaction_reader.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/common_reader.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/bank_reader.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/paymaster_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_proof.c
         )
 
 add_library(app_lib STATIC ${LIB_SRC})

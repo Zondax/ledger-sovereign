@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2025 Zondax AG
+ *  (c) 2018 - 2023 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,29 +13,36 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-
 #pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "parser_common.h"
+#include "common_txdef.h"
 
-parser_error_t checkStack();
-parser_error_t freeStack();
+typedef struct {
+    uint32_t entries;
+    parser_context_t data;
+} merkle_leaves_data_t;
 
-parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj);
+typedef struct {
+    uint32_t entries;
+    parser_context_t indices;
+} merkle_leaves_indices_t;
 
-// parser_error_t readType(parser_context_t *ctx, RegistryEntry_t *entry);
-// parser_error_t getVariant(parser_context_t *ctx, RegistryEntry_t *type, uint32_t typeId, uint8_t index);
+typedef struct {
+    uint32_t entries;
+    parser_context_t data;
+} merkle_lemmas_t;
 
-// Helpers
-// parser_error_t checkPathKeyword(Vector_t *path, const char *keyword, bool *found);
-// parser_error_t readSignedExtension(parser_context_t *ctx, SignedExtension_t *extension);
-// parser_error_t getType(parser_context_t *ctx, RegistryEntry_t *type, uint32_t typeId);
-// parser_error_t readField(parser_context_t *ctx, Field_t *entry);
-// parser_error_t readTypeRef(parser_context_t *ctx, TypeRef_t *type);
+typedef struct {
+    merkle_leaves_data_t leaves;
+    merkle_leaves_indices_t indices;
+    merkle_lemmas_t lemmas;
+    uint64_t tree_size;
+    bytes_t root_hash;
+} merkle_proof_t;
 
 #ifdef __cplusplus
 }
