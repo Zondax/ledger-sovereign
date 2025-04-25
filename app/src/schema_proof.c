@@ -23,6 +23,7 @@
 #include "borsh.h"
 #include "parser_common.h"
 #include "parser_impl.h"
+#include "schema_helper.h"
 #include "schema_reader.h"
 #include "stack_manager.h"
 
@@ -103,16 +104,10 @@ static parser_error_t hash_index_leaf(merkle_leaves_data_t *leaves, uint64_t ind
     CHECK_INPUT(hash);
 
     // move the offset where leaves_data[index] starts
-    uint32_t data_length = 0;
-    for (uint64_t i = 0; i < index; i++) {
-        CHECK_ERROR(read_u32(&leaves->data, &data_length));
-        if (leaves->data.offset + data_length > leaves->data.buffer.len) {
-            return parser_unexpected_buffer_end;
-        }
-        leaves->data.offset += data_length;
-    }
+    CHECK_ERROR(schema_move_leaf_offset(leaves, index));
 
     // get data length
+    uint32_t data_length = 0;
     CHECK_ERROR(read_u32(&leaves->data, &data_length));
 
     // Compute hash from entry and store it in proof->hash
@@ -122,7 +117,7 @@ static parser_error_t hash_index_leaf(merkle_leaves_data_t *leaves, uint64_t ind
     crypto_sha256_final(hash);
 
     // reset offset
-    leaves->data.offset = 0;
+    CHECK_ERROR(schema_reset_leaf_offset(leaves));
 
     return parser_ok;
 }
@@ -187,33 +182,6 @@ static parser_error_t get_next_lemma_hash(merkle_lemmas_t *lemmas, uint8_t *hash
 }
 
 /**
- * @brief Find an index in the indices array.
- *
- * @param index The index to find.
- * @param indices The indices array.
- * @return bool True if the index is found, false otherwise.
- */
-bool find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec) {
-    CHECK_INPUT(indices);
-    CHECK_INPUT(index_vec);
-
-    *index_vec = 0;
-    for (uint64_t i = 0; i < indices->entries; i++) {
-        uint64_t index_tmp = 0;
-        CHECK_ERROR(read_u64(&indices->indices, &index_tmp));
-        if (index_tmp == index_leaf) {
-            *index_vec = i;
-            indices->indices.offset = 0;
-            return true;
-        }
-    }
-
-    // reset offset
-    indices->indices.offset = 0;
-    return false;
-}
-
-/**
  * @brief Check if there are leaves in the range.
  *
  * @param start The start index.
@@ -257,7 +225,7 @@ static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_sta
     // If this is a single node, return the hash of the node
     if (index_end - index_start == 1) {
         uint64_t index_vec = 0;
-        if (find_index(index_start, &proof->indices, &index_vec)) {
+        if (schema_find_index(index_start, &proof->indices, &index_vec)) {
             CHECK_ERROR(hash_index_leaf(&proof->leaves, index_vec, hash));
 
             return parser_ok;

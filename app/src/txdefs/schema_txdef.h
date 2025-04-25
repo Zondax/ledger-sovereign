@@ -238,19 +238,18 @@ typedef struct {
 } schema_tuple_t;
 
 typedef struct {
-    bool has_show_as;
-    bytes_t show_as;
-    bool has_structured_show_as;
-    bytes_t structured_show_as;
-    bool peekable;
-    uint32_t fields_qty;
-    unnamed_field_t fields[MAX_FIELDS_QTY];
+    link_t value;
 } schema_option_t;
 
 typedef struct {
     uint64_t len;
     link_t value;
 } schema_array_t;
+
+typedef struct {
+    uint32_t len;
+    link_t value;
+} schema_vec_t;
 
 typedef struct {
     link_t key;
@@ -269,40 +268,11 @@ typedef struct {
 } types_t;
 
 typedef struct {
-    uint32_t qty;
-    uint64_t indices[MAX_SCHEMES_QTY];
-} root_type_indices_t;
-
-typedef struct {
-    bytes_t data;
-    bytes_t name;
-} registry_t;
-
-typedef struct {
-    bytes_t name;
-    uint32_t qty;
-    registry_t registry[MAX_REGISTRIES_QTY];
-} name_registry_t;
-
-typedef struct {
-    uint32_t qty;
-    name_registry_t vec_registries[MAX_NAME_REGISTRIES_QTY];
-} name_registries_t;
-
-typedef struct {
-    uint64_t chain_id;
-    bytes_t chain_name;
-    uint8_t gas_token_decimals;
-    name_registries_t name_registries;
-} chain_data_t;
-
-typedef struct {
     types_t types;
     root_type_indices_t root_type_indices;
     chain_data_t chain_data;
     bytes_t extra_metadata_hash;
     bytes_t chain_hash;
-    uint64_t call_message_index[MAX_RUNTIME_CALL_TYPE];
 } schema_t;
 
 #ifdef __cplusplus

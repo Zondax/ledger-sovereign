@@ -145,6 +145,11 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/bank_reader.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules/paymaster_reader.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_proof.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_helper.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_display.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_utils.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_item_manager.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_item_buffer.c
         )
 
 add_library(app_lib STATIC ${LIB_SRC})

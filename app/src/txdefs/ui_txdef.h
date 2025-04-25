@@ -21,36 +21,36 @@ extern "C" {
 
 #include "common_txdef.h"
 
+#define MAX_ITEMS 30
+#define MAX_STRING_LENGTH 100
+#define U128_STR_MAX_LEN 40
+#define MAX_SEPARATOR_LENGTH 100
+#define SEPARATOR_TITLE_OPEN "|"
+#define SEPARATOR_TITLE_CLOSE "|"
+#define SEPARATOR_DATA_OPEN "{"
+#define SEPARATOR_DATA_CLOSE "}"
+#define SEPARATOR_TITLE_DISPLAY "/"
+#define PAGE_BREAK ">"
+
+// Buffer to store item data for array or vector display
 typedef struct {
-    uint32_t entries;
-    parser_context_t data;
-} merkle_leaves_data_t;
+    bool initialized;
+    uint8_t qty;
+    char separator_open[MAX_SEPARATOR_LENGTH];
+    uint8_t separator_open_len;
+    char separator_close[MAX_SEPARATOR_LENGTH];
+    uint8_t separator_close_len;
+    char data[MAX_STRING_LENGTH];
+} item_buffer_t;
 
 typedef struct {
-    uint32_t entries;
-    parser_context_t indices;
-} merkle_leaves_indices_t;
-
+    char title[MAX_STRING_LENGTH];
+    char data[MAX_STRING_LENGTH];
+} ui_item_t;
 typedef struct {
-    uint32_t entries;
-    parser_context_t data;
-} merkle_lemmas_t;
-
-typedef struct {
-    uint32_t qty;
-    parser_context_t indices;
-    bytes_t complete_borsh_data;
-} root_type_indices_t;
-
-typedef struct {
-    merkle_leaves_data_t leaves;
-    merkle_leaves_indices_t indices;
-    merkle_lemmas_t lemmas;
-    uint64_t tree_size;
-    bytes_t root_hash;
-    root_type_indices_t root_type_indices;
-    chain_data_t chain_data;
-} merkle_proof_t;
+    uint16_t qty;
+    ui_item_t items[MAX_ITEMS];
+} ui_items_t;
 
 #ifdef __cplusplus
 }

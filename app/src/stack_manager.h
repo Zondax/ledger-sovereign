@@ -19,14 +19,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "parser_common.h"
 #include "zxmacros.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 #if defined(LEDGER_SPECIFIC)
-#define STACK_SHIFT   0x20
+#define STACK_SHIFT 0x20
 #define MINIMUM_STACK 0x400
 #else
 static int16_t recursionDepthCounter = 0;
@@ -66,7 +66,7 @@ parser_error_t freeStack(uint8_t depth) {
     if (recursionDepthCounter > 0) {
         recursionDepthCounter -= depth;
     }
-#else 
+#else
     (void)depth;
     void *p = NULL;
     const uint32_t availableStack = (uint32_t)((void *)&p) - (uint32_t)&app_stack_canary;

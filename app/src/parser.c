@@ -47,26 +47,23 @@ parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t d
     return _read(ctx, tx_obj);
 }
 
-parser_error_t parser_validate(parser_context_t *ctx) {
+parser_error_t parser_validate(parser_tx_t *txObj) {
     // Iterate through all items to check that all can be shown and are valid
     uint8_t numItems = 0;
-    CHECK_ERROR(parser_getNumItems(ctx, &numItems))
+    CHECK_ERROR(parser_getNumItems(txObj, &numItems))
 
     char tmpKey[40] = {0};
     char tmpVal[40] = {0};
 
     for (uint8_t idx = 0; idx < numItems; idx++) {
         uint8_t pageCount = 0;
-        CHECK_ERROR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
+        CHECK_ERROR(parser_getItem(txObj, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
     }
     return parser_ok;
 }
 
-parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
-    // #{TODO} --> function to retrieve num Items
-    // *num_items = _getNumItems();
-    UNUSED(ctx);
-    *num_items = 2;
+parser_error_t parser_getNumItems(const parser_tx_t *txObj, uint8_t *num_items) {
+    *num_items = txObj->device_items.qty;
     if (*num_items == 0) {
         return parser_unexpected_number_items;
     }
@@ -87,31 +84,22 @@ static parser_error_t checkSanity(uint8_t numItems, uint8_t displayIdx) {
     return parser_ok;
 }
 
-parser_error_t parser_getItem(const parser_context_t *ctx, uint8_t displayIdx, char *outKey, uint16_t outKeyLen,
-                              char *outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
+parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal,
+                              uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     UNUSED(pageIdx);
     *pageCount = 1;
     uint8_t numItems = 0;
-    CHECK_ERROR(parser_getNumItems(ctx, &numItems))
+    CHECK_ERROR(parser_getNumItems(txObj, &numItems))
     CHECK_APP_CANARY()
 
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
-    switch (displayIdx) {
-        case 0:
-            // Display Item 0
-            snprintf(outKey, outKeyLen, "Blind");
-            snprintf(outVal, outValLen, "Signing");
-            return parser_ok;
-        case 1:
-            // Display Item 0
-            snprintf(outKey, outKeyLen, "Txn");
+    char bufferUI[200] = {0};
+    snprintf(outKey, outKeyLen, "%s", txObj->device_items.items[displayIdx].title);
+    snprintf(bufferUI, sizeof(bufferUI), "%s", txObj->device_items.items[displayIdx].data);
 
-            return parser_ok;
-        default:
-            break;
-    }
+    pageString(outVal, outValLen, bufferUI, pageIdx, pageCount);
 
-    return parser_display_idx_out_of_range;
+    return parser_ok;
 }

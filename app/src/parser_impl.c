@@ -23,9 +23,8 @@
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     UNUSED(c);
 
-    // CHECK_ERROR(metadata_read(c, v));
-    // CHECK_ERROR(unsigned_transaction_read(c, v));
     CHECK_ERROR(merkle_proofs_read(c, v));
+    CHECK_ERROR(unsigned_transaction_read(c, v));
 
     return parser_ok;
 }
@@ -40,6 +39,12 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Initialized empty context";
         case parser_unexpected_buffer_end:
             return "Unexpected buffer end";
+        case parser_encoding_failed:
+            return "Encoding failed";
+        case parser_invalid_crypto_settings:
+            return "Invalid crypto settings";
+        case parser_ledger_api_error:
+            return "Ledger API error";
         case parser_unexpected_type:
             return "Unexpected type";
         case parser_unexpected_method:
@@ -79,6 +84,42 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "scheme indices overflow";
         case parser_unexpected_root_hash:
             return "unexpected root hash";
+        case parser_schema_index_not_found:
+            return "schema index not found";
+        case parser_scheme_named_link_index_overflow:
+            return "scheme named link index overflow";
+        case parser_scheme_unnamed_link_index_overflow:
+            return "scheme unnamed link index overflow";
+        case parser_scheme_unnamed_index_not_found:
+            return "scheme unnamed index not found";
+        case parser_scheme_variant_index_overflow:
+            return "scheme variant index overflow";
+        case parser_scheme_variant_index_not_found:
+            return "scheme variant index not found";
+        case parser_scheme_discriminant_overflow:
+            return "scheme discriminant overflow";
+        case parser_name_registry_not_found:
+            return "name registry not found";
+        case parser_too_many_items:
+            return "too many items";
+        case parser_push_item_too_long:
+            return "push item too long";
+
+        // UI errors
+        case parser_ui_item_data_empty:
+            return "item data empty";
+        case parser_ui_item_title_empty:
+            return "item title empty";
+        case parser_ui_open_bracket_not_found:
+            return "open bracket not found";
+        case parser_ui_close_bracket_not_found:
+            return "close bracket not found";
+        case parser_ui_find_bracket_buffer_too_small:
+            return "find bracket buffer too small";
+        case parser_ui_buffer_not_initialized:
+            return "buffer not initialized";
+        case parser_ui_buffer_init_failed:
+            return "buffer init failed";
 
         default:
             return "Unrecognized error code";

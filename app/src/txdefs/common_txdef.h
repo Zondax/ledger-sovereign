@@ -28,6 +28,9 @@ extern "C" {
 #define ADDRESS_SIZE 28
 #define DEFAULT_SAFE_VEC_LEN 20
 #define MAX_RUNTIME_CALL_TYPE 15
+#define MAX_NAME_REGISTRIES_QTY 5
+#define MAX_REGISTRIES_QTY 5
+#define MAX_INPUT_CHUNK 256
 
 typedef enum {
     RUNTIME_CALL_BANK = 0,
@@ -48,6 +51,11 @@ typedef enum {
     ADDRESS_TYPE_STANDARD = 0,
     ADDRESS_TYPE_VM,
 } address_e;
+
+typedef struct {
+    uint64_t lo;
+    uint64_t hi;
+} uint128_t;
 
 typedef struct {
     const uint8_t *ptr;
@@ -90,6 +98,30 @@ typedef struct {
     uint32_t length;
     address_t address[DEFAULT_SAFE_VEC_LEN];
 } address_list_t;
+
+typedef struct {
+    bytes_t data;
+    bytes_t name;
+} registry_t;
+
+typedef struct {
+    bytes_t name;
+    uint32_t qty;
+    registry_t registry[MAX_REGISTRIES_QTY];
+} name_registry_t;
+
+typedef struct {
+    uint32_t qty;
+    name_registry_t vec_registries[MAX_NAME_REGISTRIES_QTY];
+} name_registries_t;
+
+typedef struct {
+    uint64_t chain_id;
+    bytes_t chain_name;
+    uint8_t gas_token_decimals;
+    name_registries_t name_registries;
+    bytes_t complete_borsh_data;
+} chain_data_t;
 
 #ifdef __cplusplus
 }

@@ -32,7 +32,8 @@ using ::testing::TestWithParam;
 typedef struct {
     uint64_t index;
     std::string name;
-    std::string blob;
+    std::string transaction_blob;
+    std::string merkle_proof_blob;
     std::vector<std::string> expected;
     std::vector<std::string> expected_expert;
 } testcase_t;
@@ -80,8 +81,9 @@ std::vector<testcase_t> GetJsonTestCases(std::string jsonFile) {
             outputs_expert.push_back(s.asString());
         }
 
-        answer.push_back(testcase_t{obj[i]["index"].asUInt64(), obj[i]["name"].asString(), obj[i]["blob"].asString(),
-                                    outputs, outputs_expert});
+        answer.push_back(testcase_t{obj[i]["index"].asUInt64(), obj[i]["name"].asString(),
+                                    obj[i]["transaction_blob"].asString(), obj[i]["merkle_proof_blob"].asString(), outputs,
+                                    outputs_expert});
     }
 
     return answer;
@@ -94,7 +96,10 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
     parser_error_t err;
 
     uint8_t buffer[5000];
-    uint16_t bufferLen = parseHexString(buffer, sizeof(buffer), tc.blob.c_str());
+    uint16_t bufferLen = parseHexString(buffer, sizeof(buffer), tc.merkle_proof_blob.c_str());
+
+    uint16_t bufferLen_tx = parseHexString(buffer + bufferLen, sizeof(buffer), tc.transaction_blob.c_str());
+    bufferLen += bufferLen_tx;
 
     parser_tx_t tx_obj;
     memset(&tx_obj, 0, sizeof(tx_obj));
@@ -102,7 +107,7 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
     err = parser_parse(&ctx, buffer, bufferLen, &tx_obj);
     ASSERT_EQ(err, parser_ok) << parser_getErrorDescription(err);
 
-    auto output = dumpUI(&ctx, 39, 39);
+    auto output = dumpUI(&tx_obj, 39, 39);
 
     std::cout << std::endl;
     for (const auto &i : output) {
@@ -112,19 +117,17 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
 
     std::vector<std::string> expected = app_mode_expert() ? tc.expected_expert : tc.expected;
 
-// #{TODO} --> After updating testvector, enable this part
-#if 0
     EXPECT_EQ(output.size(), expected.size());
     for (size_t i = 0; i < expected.size(); i++) {
         if (i < output.size()) {
             EXPECT_THAT(output[i], testing::Eq(expected[i]));
         }
     }
-#endif
 }
 
 INSTANTIATE_TEST_SUITE_P
 
-    (DISABLED_JsonTestCasesCurrentTxVer, JsonTestsA, ::testing::ValuesIn(GetJsonTestCases("testcases.json")),
+    (JsonTestCasesCurrentTxVer, JsonTestsA, ::testing::ValuesIn(GetJsonTestCases("testcases.json")),
      JsonTestsA::PrintToStringParamName());
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Expert) { check_testcase(GetParam(), true); }
+TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Normal) { check_testcase(GetParam(), false); }

@@ -1,0 +1,683 @@
+/*******************************************************************************
+ *   (c) 2018 - 2025 Zondax AG
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ********************************************************************************/
+
+#include "schema_display.h"
+
+#include "app_mode.h"
+#include "bech32.h"
+#include "borsh.h"
+#include "schema_helper.h"
+#include "schema_reader.h"
+#include "ui_item_manager.h"
+#include "ui_utils.h"
+#include "zxerror.h"
+#include "zxformat.h"
+
+bool ui_expert_mode = false;
+char item_data[MAX_STRING_LENGTH] = {0};
+
+#define NONE_STRING "None"
+
+parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *input_token) {
+    CHECK_INPUT(txObj);
+    CHECK_INPUT(name);
+    CHECK_INPUT(input_token);
+
+    print_buffer_str(name, "Name");
+    print_buffer_str(input_token, "Input token");
+
+    name_registries_t registries = txObj->merkle_proofs.chain_data.name_registries;
+    for (uint32_t i = 0; i < registries.qty; i++) {
+        if (registries.vec_registries[i].name.len == name->len &&
+            MEMCMP(registries.vec_registries[i].name.ptr, name->ptr, name->len) == 0) {
+            for (uint32_t j = 0; j < registries.vec_registries[i].qty; j++) {
+                print_buffer_str(&registries.vec_registries[i].registry[j].data, "Registry data");
+                print_buffer_str(input_token, "Input token");
+                if (registries.vec_registries[i].registry[j].data.len == input_token->len &&
+                    MEMCMP(registries.vec_registries[i].registry[j].data.ptr, input_token->ptr, input_token->len) == 0) {
+                    MEMZERO(item_data, sizeof(item_data));
+                    MEMCPY(item_data, registries.vec_registries[i].registry[j].name.ptr,
+                           registries.vec_registries[i].registry[j].name.len);
+                    append_item_data(item_data, registries.vec_registries[i].registry[j].name.len);
+                    print_buffer_str(&registries.vec_registries[i].registry[j].name, "Registry name");
+                    print_string("Found name registry\n");
+                    return parser_ok;
+                }
+            }
+        }
+    }
+
+    return parser_name_registry_not_found;
+}
+
+parser_error_t render_fixed_point(parser_tx_t *txObj, fixed_point_display_t display, uint128_t value) {
+    CHECK_INPUT(txObj);
+    print_string("render_fixed_point");
+
+    switch (display.type) {
+        case FIXED_POINT_DISPLAY_DECIMALS:
+            // TODO: Implement me
+            print_string("render_fixed_point IMPLEMENT ME 0");
+            return parser_unexpected_type;
+        case FIXED_POINT_DISPLAY_FROM_SIBLING_FIELD:
+            print_u64("Value: ", display.from_sibling_field.field_index);
+            print_u64("Byte offset: ", display.from_sibling_field.byte_offset);
+            // get offset
+            if (txObj->unsigned_transaction_raw.offset + display.from_sibling_field.byte_offset >=
+                txObj->unsigned_transaction_raw.buffer.len) {
+                return parser_unexpected_buffer_end;
+            }
+            uint8_t offset = txObj->unsigned_transaction_raw.buffer
+                                 .ptr[txObj->unsigned_transaction_raw.offset + display.from_sibling_field.byte_offset];
+            print_u8("Offset: ", offset);
+
+            MEMZERO(item_data, sizeof(item_data));
+            CHECK_ERROR(render_number(value.hi, value.lo, offset, "", "", item_data, sizeof(item_data)));
+            append_item_data(item_data, strlen(item_data));
+
+            return parser_ok;
+        default:
+            return parser_unexpected_type;
+    }
+}
+
+parser_error_t render_primitive_integer(parser_tx_t *txObj, integer_display_t display, uint128_t value) {
+    CHECK_INPUT(txObj);
+    print_string("render_primitive_integer");
+
+    switch (display.type) {
+        case INTEGER_DISPLAY_HEX:
+            // TODO: Implement me
+            print_string("render_primitive_integer IMPLEMENT ME 0");
+            return parser_unexpected_type;
+        case INTEGER_DISPLAY_DECIMAL:
+            MEMZERO(item_data, sizeof(item_data));
+            CHECK_ERROR(render_number(value.hi, value.lo, 0, "", "", item_data, sizeof(item_data)));
+            append_item_data(item_data, strlen(item_data));
+            break;
+        case INTEGER_DISPLAY_FIXED_POINT:
+            CHECK_ERROR(render_fixed_point(txObj, display.fixed_point, value));
+            break;
+        default:
+            return parser_unexpected_type;
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_integer(parser_tx_t *txObj, primitive_integer_t *primitive) {
+    CHECK_INPUT(txObj);
+    CHECK_INPUT(primitive);
+    print_string("Displaying integer");
+
+    uint128_t value = {0};
+    switch (primitive->type) {
+        case INTEGER_I8:
+        case INTEGER_U8: {
+            uint8_t *ptr = (uint8_t *)&value;
+            CHECK_ERROR(read_u8(&txObj->unsigned_transaction_raw, ptr));
+            print_u8("Value: ", *ptr);
+            break;
+        }
+        case INTEGER_I16:
+        case INTEGER_U16: {
+            uint16_t *ptr = (uint16_t *)&value;
+            CHECK_ERROR(read_u16(&txObj->unsigned_transaction_raw, ptr));
+            print_u16("Value: ", *ptr);
+            break;
+        }
+        case INTEGER_I32:
+        case INTEGER_U32: {
+            uint32_t *ptr = (uint32_t *)&value;
+            CHECK_ERROR(read_u32(&txObj->unsigned_transaction_raw, ptr));
+            print_u32("Value: ", *ptr);
+            break;
+        }
+        case INTEGER_I64:
+        case INTEGER_U64: {
+            CHECK_ERROR(read_u64(&txObj->unsigned_transaction_raw, &value.lo));
+            print_u64("Value: ", value.lo);
+            break;
+        }
+        case INTEGER_I128:
+        case INTEGER_U128: {
+            CHECK_ERROR(read_u64(&txObj->unsigned_transaction_raw, &value.lo));
+            print_u64("Value: ", value.lo);
+            CHECK_ERROR(read_u64(&txObj->unsigned_transaction_raw, &value.hi));
+            print_u64("Value: ", value.hi);
+            break;
+        }
+        default:
+            return parser_unexpected_type;
+    }
+
+    CHECK_ERROR(render_primitive_integer(txObj, primitive->display, value));
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_byte_array(parser_tx_t *txObj, primitive_byte_array_t *byte_array) {
+    CHECK_INPUT(txObj);
+    CHECK_INPUT(byte_array);
+    print_string("Displaying byte array\n");
+
+    bytes_t array = {0};
+    array.len = byte_array->len;
+    array.ptr = txObj->unsigned_transaction_raw.buffer.ptr + txObj->unsigned_transaction_raw.offset;
+    CTX_CHECK_AND_ADVANCE(&txObj->unsigned_transaction_raw, byte_array->len)
+    print_buffer_str(&array, "Array");
+    print_buffer(&array, "Array");
+
+    if (byte_array->has_name_registry) {
+        print_buffer_str(&byte_array->name_registry, "Name registry");
+        // check if name registry exist
+        CHECK_ERROR(find_name_registry(txObj, &byte_array->name_registry, &array));
+        return parser_ok;
+    }
+
+    if (byte_array->len > MAX_INPUT_CHUNK) {
+        print_string("Byte array length is greater than max input chunk\n");
+        return parser_unexpected_type;
+    }
+
+    switch (byte_array->display.type) {
+        case BYTE_DISPLAY_HEX:
+            // TODO: Implement me
+            print_string("render_primitive_byte_array IMPLEMENT ME 0");
+            return parser_unexpected_type;
+        case BYTE_DISPLAY_DECIMAL:
+            // TODO: Implement me
+            print_string("render_primitive_byte_array IMPLEMENT ME 1");
+            return parser_unexpected_type;
+        case BYTE_DISPLAY_BECH32:
+            // TODO: Implement me
+            print_string("render_primitive_byte_array IMPLEMENT ME 2");
+            return parser_unexpected_type;
+        case BYTE_DISPLAY_BECH32M: {
+            const char *hrp = (char *)byte_array->display.bech32m.prefix.prefix.ptr;
+            MEMZERO(item_data, sizeof(item_data));
+            MAP_ZXERR_TO_PARSER_ERR(
+                bech32EncodeFromBytes(item_data, sizeof(item_data), hrp, array.ptr, array.len, 1, BECH32_ENCODING_BECH32M));
+            append_item_data(item_data, strlen(item_data));
+            break;
+        }
+        case BYTE_DISPLAY_BASE58:
+            // TODO: Implement me
+            print_string("render_primitive_byte_array IMPLEMENT ME 3");
+            return parser_unexpected_type;
+        default:
+            return parser_unexpected_type;
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_enum(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+    print_string("Displaying enum\n");
+
+    schema_enum_t enum_type = {0};
+    CHECK_ERROR(read_enum(&txObj->merkle_proofs.leaves.data, &enum_type));
+    CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+
+    uint32_t field_index[MAX_FIELDS_QTY] = {0};
+    uint16_t index_qty = 0;
+    uint32_t max_indexes = MAX_FIELDS_QTY;
+    CHECK_ERROR(get_variant_link_index(enum_type.variants, enum_type.variants_qty, field_index, &index_qty, max_indexes));
+
+    if (index_qty == 0) {
+        return parser_scheme_variant_index_not_found;
+    }
+
+    uint8_t discriminant = 0;
+    CHECK_ERROR(read_u8(&txObj->unsigned_transaction_raw, &discriminant));
+
+    if (discriminant >= index_qty) {
+        return parser_scheme_discriminant_overflow;
+    }
+
+    if (enum_type.variants[discriminant].has_value && enum_type.variants[discriminant].value.tag == LINK_BY_INDEX) {
+        bool remove_variant = false;
+        if (enum_type.variants[discriminant].hide_tag || enum_type.hide_tag) {
+            print_string("Variant hide tag TRUE\n");
+            print_u64("Variant index: ", enum_type.variants[discriminant].value.data.by_index);
+        } else {
+            print_string("Variant hide tag FALSE\n");
+            print_buffer_str(&enum_type.variants[discriminant].name, "Variant name");
+            CHECK_ERROR(append_item_title((char *)enum_type.variants[discriminant].name.ptr,
+                                          enum_type.variants[discriminant].name.len));
+            remove_variant = true;
+        }
+        CHECK_ERROR(schema_display_generic_by_index(txObj, enum_type.variants[discriminant].value.data.by_index));
+        if (remove_variant) {
+            CHECK_ERROR(remove_last_item_title());
+        }
+    } else {
+        CHECK_ERROR(
+            append_item_data((char *)enum_type.variants[discriminant].name.ptr, enum_type.variants[discriminant].name.len));
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_struct(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+    print_string("Displaying struct\n");
+
+    schema_struct_t struct_type = {0};
+    CHECK_ERROR(read_struct(&txObj->merkle_proofs.leaves.data, &struct_type));
+    CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+
+    uint32_t field_index[MAX_FIELDS_QTY] = {0};
+    uint16_t index_qty = 0;
+    uint32_t max_indexes = MAX_FIELDS_QTY;
+    CHECK_ERROR(get_named_link_index(struct_type.fields, struct_type.fields_qty, field_index, &index_qty, max_indexes));
+
+    for (uint32_t i = 0; i < index_qty; i++) {
+        uint8_t type = 0;
+        CHECK_ERROR(get_schema_type(txObj, field_index[i], &type));
+        print_u8("Type: ", type);
+        if (type == LINKING_SCHEME_INTEGER) {
+            // TODO: Implement me
+            print_string("schema_display_struct IMPLEMENT ME 0");
+            return parser_unexpected_type;
+        }
+    }
+
+    if (struct_type.has_show_as || struct_type.has_structured_show_as) {
+        print_buffer_str(&struct_type.show_as, "Show as");
+        print_buffer_str(&struct_type.structured_show_as, "Structured show as");
+        for (uint32_t i = 0; i < struct_type.fields_qty; i++) {
+            // TODO: check context_bytes and container_context
+            switch (struct_type.fields[i].value.tag) {
+                case LINK_BY_INDEX:
+                    CHECK_ERROR(schema_display_generic_by_index(txObj, struct_type.fields[i].value.data.by_index));
+                    break;
+                case LINK_IMMEDIATE:
+                    CHECK_ERROR(schema_display_by_primitive(txObj, &struct_type.fields[i].value.data.immediate));
+                    break;
+                default:
+                    print_string("schema_display_struct IMPLEMENT ME 1");
+                    return parser_unexpected_type;
+            }
+
+            if (!struct_type.fields[i].silent || !is_link_skip(&struct_type.fields[i].value)) {
+                char structured_show_as[100] = {0};
+                CHECK_ERROR(find_bracket_content((char *)struct_type.structured_show_as.ptr, i, structured_show_as,
+                                                 sizeof(structured_show_as)));
+
+                if (!struct_type.fields[i].is_expert || ui_expert_mode) {
+                    uint16_t len = strlen(structured_show_as);
+                    if (len > 0) {
+                        CHECK_ERROR(append_item_title(structured_show_as, len));
+                        if (!is_item_data_empty()) {
+                            CHECK_ERROR(push_item(txObj));
+                            CHECK_ERROR(remove_last_item_title());
+                        }
+                    }
+                } else {
+                    clear_item_data_buffer();
+                }
+            }
+        }
+    } else {
+        print_string("No show as or structured show as\n");
+        for (uint32_t i = 0; i < struct_type.fields_qty; i++) {
+            // TODO: check context_bytes and container_context
+            bool remove_variant = false;
+            if ((!struct_type.fields[i].silent && !is_link_skip(&struct_type.fields[i].value) &&
+                 !struct_type.fields[i].is_expert) ||
+                ui_expert_mode) {
+                CHECK_ERROR(append_item_title((char *)struct_type.fields[i].display_name.ptr,
+                                              struct_type.fields[i].display_name.len));
+                remove_variant = true;
+            }
+            CHECK_ERROR(schema_display_generic_by_index(txObj, struct_type.fields[i].value.data.by_index));
+            if (remove_variant) {
+                if (!is_item_data_empty()) {
+                    CHECK_ERROR(push_item(txObj));
+                }
+                CHECK_ERROR(remove_last_item_title());
+            }
+        }
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_tuple(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+    print_string("Displaying tuple\n");
+
+    schema_tuple_t tuple_type = {0};
+    CHECK_ERROR(read_tuple(&txObj->merkle_proofs.leaves.data, &tuple_type));
+    CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+
+    uint32_t field_index[MAX_FIELDS_QTY] = {0};
+    uint16_t index_qty = 0;
+    uint32_t max_indexes = MAX_FIELDS_QTY;
+    CHECK_ERROR(get_unnamed_link_index(tuple_type.fields, tuple_type.fields_qty, field_index, &index_qty, max_indexes));
+
+    for (uint32_t i = 0; i < index_qty; i++) {
+        uint8_t type = 0;
+        CHECK_ERROR(get_schema_type(txObj, field_index[i], &type));
+        print_u8("Type: ", type);
+        if (type == LINKING_SCHEME_INTEGER) {
+            // TODO: Implement me
+            print_string("schema_display_tuple IMPLEMENT ME 0");
+            return parser_unexpected_type;
+        }
+    }
+
+    if (tuple_type.has_show_as || tuple_type.has_structured_show_as) {
+        for (uint32_t i = 0; i < tuple_type.fields_qty; i++) {
+            // TODO: check context_bytes and container_context
+            switch (tuple_type.fields[i].value.tag) {
+                case LINK_BY_INDEX:
+                    CHECK_ERROR(schema_display_generic_by_index(txObj, tuple_type.fields[i].value.data.by_index));
+                    break;
+                default:
+                    print_string("Tuple field is not a link by index\n");
+                    return parser_unexpected_type;
+            }
+        }
+    } else {
+        for (uint32_t i = 0; i < tuple_type.fields_qty; i++) {
+            // TODO: check context_bytes and container_context
+            switch (tuple_type.fields[i].value.tag) {
+                case LINK_BY_INDEX:
+                    CHECK_ERROR(schema_display_generic_by_index(txObj, tuple_type.fields[i].value.data.by_index));
+                    break;
+                case LINK_IMMEDIATE:
+                    CHECK_ERROR(schema_display_by_primitive(txObj, &tuple_type.fields[i].value.data.immediate));
+                    break;
+                default:
+                    print_string("Tuple field is not a link by index\n");
+                    return parser_unexpected_type;
+            }
+            if (tuple_type.fields_qty == 1) {
+                return parser_ok;
+            }
+
+            if (!tuple_type.fields[i].is_expert || ui_expert_mode) {
+                char index_str[12] = {0};
+                snprintf(index_str, sizeof(index_str), "%u", i);
+                CHECK_ERROR(append_item_title(index_str, strlen(index_str)));
+                if (!is_item_data_empty()) {
+                    CHECK_ERROR(push_item(txObj));
+                    CHECK_ERROR(remove_last_item_title());
+                }
+            }
+        }
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_option(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+    print_string("Displaying option\n");
+
+    uint8_t discriminant = 0;
+    CHECK_ERROR(read_u8(&txObj->unsigned_transaction_raw, &discriminant));
+    if (discriminant == 0) {
+        print_string("Option is empty\n");
+        CHECK_ERROR(append_item_data(NONE_STRING, strlen(NONE_STRING)));
+        CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+        return parser_ok;
+    }
+
+    schema_option_t option_type = {0};
+    CHECK_ERROR(read_option(&txObj->merkle_proofs.leaves.data, &option_type));
+    CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+
+    switch (option_type.value.tag) {
+        case LINK_BY_INDEX:
+            CHECK_ERROR(schema_display_generic_by_index(txObj, option_type.value.data.by_index));
+            break;
+        case LINK_IMMEDIATE:
+            CHECK_ERROR(schema_display_by_primitive(txObj, &option_type.value.data.immediate));
+            break;
+        default:
+            print_string("Option field is not a link by index\n");
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_array(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+    print_string("Displaying array\n");
+
+    schema_array_t array_type = {0};
+    CHECK_ERROR(read_array(&txObj->merkle_proofs.leaves.data, &array_type));
+    CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+
+    for (uint32_t i = 0; i < array_type.len; i++) {
+        switch (array_type.value.tag) {
+            case LINK_BY_INDEX:
+                CHECK_ERROR(schema_display_generic_by_index(txObj, array_type.value.data.by_index));
+                break;
+            case LINK_IMMEDIATE:
+                CHECK_ERROR(schema_display_by_primitive(txObj, &array_type.value.data.immediate));
+                break;
+            default:
+                print_string("Array field is not a link by index\n");
+        }
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_vec(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+    print_string("Displaying vec\n");
+
+    uint32_t vec_len = 0;
+    CHECK_ERROR(read_u32(&txObj->unsigned_transaction_raw, &vec_len));
+    print_u32("Vec length: ", vec_len);
+
+    schema_vec_t vec_type = {0};
+    vec_type.len = vec_len;
+
+    for (uint32_t i = 0; i < vec_len; i++) {
+        CHECK_ERROR(read_link(&txObj->merkle_proofs.leaves.data, &vec_type.value));
+        CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+        switch (vec_type.value.tag) {
+            case LINK_BY_INDEX:
+                CHECK_ERROR(schema_display_generic_by_index(txObj, vec_type.value.data.by_index));
+                break;
+            case LINK_IMMEDIATE:
+                CHECK_ERROR(schema_display_by_primitive(txObj, &vec_type.value.data.immediate));
+                break;
+            default:
+                print_string("Vec field is not a link by index\n");
+        }
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_by_primitive(parser_tx_t *txObj, primitive_t *primitive) {
+    CHECK_INPUT(txObj);
+
+    print_string("Displaying generic by primitive\n");
+
+    switch (primitive->type) {
+        case PRIMITIVE_INTEGER:
+            CHECK_ERROR(schema_display_integer(txObj, &primitive->integer));
+            break;
+        case PRIMITIVE_BYTE_ARRAY:
+            CHECK_ERROR(schema_display_byte_array(txObj, &primitive->byte_array));
+            break;
+        case PRIMITIVE_BYTE_VEC:
+            // TODO: Implement me
+            print_string("schema_display_by_primitive IMPLEMENT ME 0");
+            return parser_unexpected_type;
+        case PRIMITIVE_FLOAT32:
+            // TODO: Implement me
+            print_string("schema_display_by_primitive IMPLEMENT ME 1");
+            return parser_unexpected_type;
+        case PRIMITIVE_FLOAT64:
+            // TODO: Implement me
+            print_string("schema_display_by_primitive IMPLEMENT ME 2");
+            return parser_unexpected_type;
+        case PRIMITIVE_STRING:
+            // TODO: Implement me
+            print_string("schema_display_by_primitive IMPLEMENT ME 3");
+            return parser_unexpected_type;
+        case PRIMITIVE_BOOLEAN:
+            // TODO: Implement me
+            print_string("schema_display_by_primitive IMPLEMENT ME 4");
+            return parser_unexpected_type;
+        default:
+            print_u8("Unknown type: ", primitive->type);
+            CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+            return parser_unexpected_type;
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display_generic_by_index(parser_tx_t *txObj, uint32_t index) {
+    CHECK_INPUT(txObj);
+    print_string("Displaying generic by link\n");
+
+    uint64_t index_vec = 0;
+    if (!schema_find_index(index, &txObj->merkle_proofs.indices, &index_vec)) {
+        return parser_schema_index_not_found;
+    }
+
+    CHECK_ERROR(schema_move_leaf_offset(&txObj->merkle_proofs.leaves, index_vec));
+
+    uint32_t len = 0;
+    CHECK_ERROR(read_u32(&txObj->merkle_proofs.leaves.data, &len));
+
+    uint8_t type = 0;
+    CHECK_ERROR(read_u8(&txObj->merkle_proofs.leaves.data, &type));
+
+    switch (type) {
+        case LINKING_SCHEME_ENUM:
+            CHECK_ERROR(schema_display_enum(txObj));
+            break;
+        case LINKING_SCHEME_STRUCT:
+            CHECK_ERROR(schema_display_struct(txObj));
+            break;
+        case LINKING_SCHEME_TUPLE:
+            CHECK_ERROR(schema_display_tuple(txObj));
+            break;
+        case LINKING_SCHEME_OPTION:
+            CHECK_ERROR(schema_display_option(txObj));
+            break;
+        case LINKING_SCHEME_ARRAY:
+            CHECK_ERROR(schema_display_array(txObj));
+            break;
+        case LINKING_SCHEME_VEC:
+            CHECK_ERROR(schema_display_vec(txObj));
+            break;
+        default:
+            print_u8("Unknown type: ", type);
+            CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
+            return parser_unexpected_type;
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_create_device_items(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+
+    uint8_t title_qty = 2;
+
+    print_u32("schema_create_device_items: ", txObj->ui_items.qty);
+    for (uint32_t i = 0; i < txObj->ui_items.qty; i++) {
+        print_string(txObj->ui_items.items[i].title);
+        print_string(txObj->ui_items.items[i].data);
+
+        if (txObj->device_items.qty > MAX_ITEMS - 1) {
+            return parser_too_many_items;
+        }
+
+        clear_item_title_buffer();
+        init_item_title_buffer(txObj->ui_items.items[i].title);
+
+        uint8_t items_qty = 0;
+        CHECK_ERROR(get_title_item_qty(&items_qty));
+        if (items_qty == 0) {
+            return parser_ui_item_title_empty;
+        }
+        print_u8("items_qty: ", items_qty);
+        char content_title[100] = {0};
+        if (items_qty >= title_qty) {
+            uint8_t title_deep = items_qty - title_qty + 1;
+            for (uint8_t j = 0; j < title_deep; j++) {
+                MEMZERO(content_title, sizeof(content_title));
+                CHECK_ERROR(create_item_title(j, j + title_qty, content_title, sizeof(content_title)));
+                bool exists = false;
+                for (uint16_t k = 0; k < txObj->device_items.qty; k++) {
+                    if (MEMCMP(txObj->device_items.items[k].title, content_title, strlen(content_title)) == 0) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists && (j + title_qty < items_qty)) {
+                    MEMCPY(txObj->device_items.items[txObj->device_items.qty].title, content_title, strlen(content_title));
+                    MEMCPY(txObj->device_items.items[txObj->device_items.qty].data, PAGE_BREAK, strlen(PAGE_BREAK));
+                    txObj->device_items.qty++;
+                }
+                if (j + title_qty == items_qty) {
+                    MEMZERO(content_title, sizeof(content_title));
+                    CHECK_ERROR(create_item_title(j, items_qty, content_title, sizeof(content_title)));
+                }
+            }
+        } else {
+            CHECK_ERROR(create_item_title(0, title_qty - 1, content_title, sizeof(content_title)));
+        }
+
+        MEMCPY(txObj->device_items.items[txObj->device_items.qty].title, content_title, strlen(content_title));
+        MEMCPY(txObj->device_items.items[txObj->device_items.qty].data, txObj->ui_items.items[i].data,
+               strlen(txObj->ui_items.items[i].data));
+        txObj->device_items.qty++;
+    }
+
+    return parser_ok;
+}
+
+parser_error_t schema_display(parser_tx_t *txObj, uint32_t start_index) {
+    CHECK_INPUT(txObj);
+    ui_expert_mode = app_mode_expert();
+
+    init_item_title_buffer(NULL);
+    init_item_data_buffer();
+
+    CHECK_ERROR(schema_display_generic_by_index(txObj, start_index));
+
+    print_u32("FINISHED item qty: ", txObj->ui_items.qty);
+    for (uint32_t i = 0; i < txObj->ui_items.qty; i++) {
+        print_string(txObj->ui_items.items[i].title);
+        print_string(txObj->ui_items.items[i].data);
+    }
+
+    // check input offset
+    if (txObj->unsigned_transaction_raw.offset != txObj->unsigned_transaction_raw.buffer.len) {
+        print_string("Input offset is not the same as buffer length\n");
+        return parser_unexpected_type;
+    }
+
+    CHECK_ERROR(schema_create_device_items(txObj));
+
+    return parser_ok;
+}

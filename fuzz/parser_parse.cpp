@@ -27,13 +27,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         return 0;
     }
 
-    rc = parser_validate(&ctx);
+    rc = parser_validate(&txObj);
     if (rc != parser_ok) {
         return 0;
     }
 
     uint8_t num_items;
-    rc = parser_getNumItems(&ctx, &num_items);
+    rc = parser_getNumItems(&txObj, &num_items);
     if (rc != parser_ok) {
         fprintf(stderr, "error in parser_getNumItems: %s\n", parser_getErrorDescription(rc));
         assert(false);
@@ -45,7 +45,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
         uint8_t page_idx = 0;
         uint8_t page_count = 1;
         while (page_idx < page_count) {
-            rc = parser_getItem(&ctx, i, PARSER_KEY, sizeof(PARSER_KEY), PARSER_VALUE, sizeof(PARSER_VALUE), page_idx,
+            rc = parser_getItem(&txObj, i, PARSER_KEY, sizeof(PARSER_KEY), PARSER_VALUE, sizeof(PARSER_VALUE), page_idx,
                                 &page_count);
 
             //            (void)fprintf(stderr, "%s = %s\n", PARSER_KEY, PARSER_VALUE);

@@ -18,6 +18,7 @@
 
 #include "borsh.h"
 #include "crypto_helper.h"
+#include "schema_helper.h"
 #include "schema_proof.h"
 
 parser_error_t read_fixed_point_display(parser_context_t *ctx, fixed_point_display_t *display) {
@@ -539,6 +540,16 @@ parser_error_t read_tuple(parser_context_t *ctx, schema_tuple_t *schema_tuple) {
     return parser_ok;
 }
 
+parser_error_t read_option(parser_context_t *ctx, schema_option_t *schema_option) {
+    CHECK_INPUT(schema_option);
+    CHECK_INPUT(ctx);
+
+    // read value
+    CHECK_ERROR(read_link(ctx, &schema_option->value));
+
+    return parser_ok;
+}
+
 parser_error_t read_array(parser_context_t *ctx, schema_array_t *schema_array) {
     CHECK_INPUT(schema_array);
     CHECK_INPUT(ctx);
@@ -557,14 +568,25 @@ parser_error_t read_root_type_indices(parser_context_t *ctx, root_type_indices_t
     CHECK_INPUT(root_type_indices);
     CHECK_INPUT(ctx);
 
+    // save complete borsh data
+    root_type_indices->complete_borsh_data.ptr = ctx->buffer.ptr;
+
     // read length
     CHECK_ERROR(read_u32(ctx, &root_type_indices->qty));
     print_u32("root_type_indices.qty:", root_type_indices->qty);
+
+    const uint8_t *ptr_mem_indices = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem_indices = ctx->offset;
     for (uint32_t i = 0; i < root_type_indices->qty; i++) {
-        CHECK_ERROR(read_u64(ctx, &root_type_indices->indices[i]));
+        uint64_t index = 0;
+        CHECK_ERROR(read_u64(ctx, &index));
         print_u8("root_indice", i);
-        print_u64("root_type:", root_type_indices->indices[i]);
+        print_u64("root_type:", index);
     }
+    root_type_indices->indices.buffer.ptr = ptr_mem_indices;
+    root_type_indices->indices.buffer.len = ctx->offset - offset_mem_indices;
+
+    root_type_indices->complete_borsh_data.len = ctx->offset - offset_mem_indices + OFFSET_U32;
 
     return parser_ok;
 }
@@ -750,213 +772,6 @@ parser_error_t read_schema_type(parser_context_t *ctx, uint8_t type) {
     return parser_ok;
 }
 
-// parser_error_t get_enum_runtime_call_link_index(schema_enum_t *schema_enum, uint32_t field_index[], uint16_t *qty,
-// uint16_t max_indexes) {
-//     CHECK_INPUT(schema_enum);
-//     CHECK_INPUT(field_index);
-//     CHECK_INPUT(qty);
-
-//     for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
-//         if (schema_enum->variants[i].discriminant == RUNTIME_CALL_BANK) {
-//             if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
-//                 field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
-//             }
-//         }
-//     }
-
-//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-// }
-
-// parser_error_t get_enum_transfer_index(schema_enum_t *schema_enum, uint32_t field_index[], uint16_t *qty, uint16_t
-// max_indexes) {
-//     CHECK_INPUT(schema_enum);
-//     CHECK_INPUT(field_index);
-//     CHECK_INPUT(qty);
-
-//     for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
-//         if (schema_enum->variants[i].discriminant == BANK_CALL_MESSAGE_TRANSFER) {
-//             if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
-//                 field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
-//             }
-//         }
-//     }
-
-//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-// }
-
-// parser_error_t get_enum_link_index(schema_enum_t *schema_enum, uint64_t field_index[], uint16_t *qty, uint16_t
-// max_indexes) {
-//     CHECK_INPUT(schema_enum);
-//     CHECK_INPUT(field_index);
-//     CHECK_INPUT(qty);
-
-//     for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
-//         if (schema_enum->variants[i].value.tag == LINK_BY_INDEX) {
-//             field_index[(*qty)++] = schema_enum->variants[i].value.data.by_index;
-//         }
-//     }
-
-//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-// }
-
-// parser_error_t get_struct_link_index(schema_struct_t *schema_struct, uint32_t field_index[], uint16_t *qty, uint16_t
-// max_indexes) {
-//     CHECK_INPUT(schema_struct);
-//     CHECK_INPUT(field_index);
-//     CHECK_INPUT(qty);
-
-//     named_field_t *field = schema_struct->fields;
-//     named_field_t *end = field + schema_struct->fields_qty;
-
-//     while (field < end && *qty < max_indexes) {
-//         if (field->value.tag == LINK_BY_INDEX) {
-//             field_index[(*qty)++] = field->value.data.by_index;
-//         }
-//         field++;
-//     }
-
-//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-// }
-
-// parser_error_t get_tuple_link_index(schema_tuple_t *schema_tuple, uint32_t field_index[], uint16_t *qty, uint16_t
-// max_indexes) {
-//     CHECK_INPUT(schema_tuple);
-//     CHECK_INPUT(field_index);
-//     CHECK_INPUT(qty);
-
-//     for (uint32_t i = 0; i < schema_tuple->fields_qty; i++) {
-//         if (schema_tuple->fields[i].value.tag == LINK_BY_INDEX) {
-//             field_index[(*qty)++] = schema_tuple->fields[i].value.data.by_index;
-//         }
-//     }
-
-//     return (*qty >= max_indexes) ? parser_unexpected_error : parser_ok;
-// }
-
-// parser_error_t get_schema_indexes_recursive(parser_tx_t *txObj, uint32_t index, uint32_t runtime_call_index, uint32_t
-// field_index[], uint16_t *qty, uint8_t *visited, uint16_t max_indexes) {
-//     CHECK_INPUT(txObj);
-//     CHECK_INPUT(field_index);
-//     CHECK_INPUT(qty);
-//     CHECK_INPUT(visited);
-
-//     // Check array bounds and visited status
-//     if (index >= MAX_SCHEMES_QTY || *qty >= max_indexes) {
-//         return parser_unexpected_error;
-//     }
-
-//     // Check if we've already visited this index
-//     if (visited[index]) {
-//         return parser_ok;
-//     }
-//     visited[index] = 1;
-
-//     // Get linking scheme data
-//     linking_scheme_t *scheme = &txObj->schema.types.schemes[index];
-//     print_u32("SEARCHING index:", index);
-//     print_u8("scheme->type:", scheme->type);
-
-//     uint16_t current_qty = *qty;
-//     switch (scheme->type) {
-//         case LINKING_SCHEME_ENUM: {
-//             schema_enum_t enum_type = {0};
-//             CHECK_ERROR(read_enum(&scheme->data, &enum_type));
-//             if (index == runtime_call_index) {
-//                 CHECK_ERROR(get_enum_runtime_call_link_index(&enum_type, field_index, qty, max_indexes));
-//             } else if (index == 4) {
-//                 CHECK_ERROR(get_enum_link_index(&enum_type, field_index, qty, max_indexes));
-//             } else if (index == 5) {
-//                 CHECK_ERROR(get_enum_transfer_index(&enum_type, field_index, qty, max_indexes));
-//             } else {
-//                 CHECK_ERROR(get_enum_link_index(&enum_type, field_index, qty, max_indexes));
-//             }
-//             break;
-//         }
-//         case LINKING_SCHEME_STRUCT: {
-//             schema_struct_t struct_type = {0};
-//             CHECK_ERROR(read_struct(&scheme->data, &struct_type));
-//             CHECK_ERROR(get_struct_link_index(&struct_type, field_index, qty, max_indexes));
-//             break;
-//         }
-//         case LINKING_SCHEME_TUPLE: {
-//             schema_tuple_t tuple_type = {0};
-//             CHECK_ERROR(read_tuple(&scheme->data, &tuple_type));
-//             CHECK_ERROR(get_tuple_link_index(&tuple_type, field_index, qty, max_indexes));
-//             break;
-//         }
-
-//         default:
-//             break;
-//     }
-
-//     for (uint16_t i = current_qty; i < *qty && i < max_indexes; i++) {
-//         print_u32("Recursive Local field_index:", field_index[i]);
-//     }
-
-//     for (uint16_t i = current_qty; i < *qty && i < max_indexes; i++) {
-//         CHECK_ERROR(get_schema_indexes_recursive(txObj, field_index[i], runtime_call_index, field_index, qty, visited,
-//         max_indexes));
-//     }
-
-//     return parser_ok;
-// }
-
-// parser_error_t get_schema_unsigned_transaction_index(parser_tx_t *txObj, uint8_t *indices, uint32_t qty) {
-//     CHECK_INPUT(indices);
-//     CHECK_INPUT(txObj);
-
-//     // Get root index
-//     if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_UNSIGNED_TRANSACTION || txObj->schema.root_type_indices.qty <=
-//     ROLLUP_ROOTS_RUNTIME_CALL) {
-//         return parser_root_type_indices_overflow;
-//     }
-
-//     uint32_t root_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_UNSIGNED_TRANSACTION];
-//     uint32_t runtime_call_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_RUNTIME_CALL];
-
-//     if (root_index > txObj->schema.types.qty || runtime_call_index > txObj->schema.types.qty) {
-//         return parser_scheme_indices_overflow;
-//     }
-//     print_u32("root_index:", root_index);
-//     print_u32("runtime_call_index:", runtime_call_index);
-
-//     uint32_t field_index[MAX_FIELDS_QTY] = {0};
-//     uint16_t field_count = 0;
-//     uint8_t visited[MAX_SCHEMES_QTY] = {0};
-
-//     CHECK_ERROR(get_schema_indexes_recursive(txObj, root_index, runtime_call_index, field_index, &field_count, visited,
-//     MAX_FIELDS_QTY));
-
-//     for (uint32_t i = 0; i < field_count; i++) {
-//         print_u32("field_index:", field_index[i]);
-//     }
-
-//     return parser_ok;
-// }
-
-// parser_error_t get_call_message_index(parser_tx_t *txObj) {
-//     CHECK_INPUT(txObj);
-
-//     // Get root index
-//     if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_RUNTIME_CALL) {
-//         return parser_root_type_indices_overflow;
-//     }
-
-//     uint32_t runtime_call_index = txObj->schema.root_type_indices.indices[ROLLUP_ROOTS_RUNTIME_CALL];
-
-//     if (runtime_call_index > txObj->schema.types.qty) {
-//         return parser_scheme_indices_overflow;
-//     }
-
-//     uint16_t field_count = 0;
-//     schema_enum_t enum_type = {0};
-//     CHECK_ERROR(read_enum(&txObj->schema.types.schemes[runtime_call_index].data, &enum_type));
-//     txObj->schema.types.schemes[runtime_call_index].data.offset = 0;
-//     CHECK_ERROR(get_enum_link_index(&enum_type, &txObj->schema.call_message_index, &field_count, MAX_FIELDS_QTY));
-
-//     return parser_ok;
-// }
-
 parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
@@ -1000,7 +815,8 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     return parser_ok;
 }
 
-// | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash) |
+// | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash) | borsh(root_indexes) |
+// borsh(chain_data)
 parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
@@ -1058,15 +874,116 @@ parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proofs.root_hash.len);
     print_buffer(&txObj->merkle_proofs.root_hash, "root_hash");
 
-    // TODO: check that we have consumed all data
-    if (ctx->offset != ctx->buffer.len) {
-        print_string("Failed to parse metadata\n");
-        return parser_unexpected_error;
-    } else {
-        print_string("Successfully parsed metadata\n");
-    }
+    // read root_type_indices
+    CHECK_ERROR(read_root_type_indices(ctx, &txObj->merkle_proofs.root_type_indices));
+
+    // read name_registries
+    CHECK_ERROR(read_chain_data(ctx, &txObj->merkle_proofs.chain_data));
+
+    // // TODO: check that we have consumed all data
+    // if (ctx->offset != ctx->buffer.len) {
+    //     print_string("Failed to parse metadata\n");
+    //     return parser_unexpected_error;
+    // } else {
+    //     print_string("Successfully parsed metadata\n");
+    // }
 
     CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proofs));
+
+    return parser_ok;
+}
+
+parser_error_t get_leave_index(merkle_leaves_data_t *leaves, merkle_leaves_indices_t *indices, uint32_t schema_index,
+                               uint32_t field_index[], uint16_t *qty, uint16_t max_indexes) {
+    CHECK_INPUT(leaves);
+    CHECK_INPUT(indices);
+    CHECK_INPUT(field_index);
+    CHECK_INPUT(qty);
+    *qty = 0;
+
+    uint64_t index_vec = 0;
+    if (!schema_find_index(schema_index, indices, &index_vec)) {
+        return parser_schema_index_not_found;
+    }
+
+    CHECK_ERROR(schema_move_leaf_offset(leaves, index_vec));
+
+    // read len
+    uint32_t len = 0;
+    CHECK_ERROR(read_u32(&leaves->data, &len));
+
+    // read type
+    uint8_t type = 0;
+    CHECK_ERROR(read_u8(&leaves->data, &type));
+
+    switch (type) {
+        case LINKING_SCHEME_ENUM:
+            print_string("READING ENUM");
+            schema_enum_t enum_type = {0};
+            CHECK_ERROR(read_enum(&leaves->data, &enum_type));
+            CHECK_ERROR(get_variant_link_index(enum_type.variants, enum_type.variants_qty, field_index, qty, max_indexes));
+            print_string("READING ENUM DONE\n");
+            break;
+        case LINKING_SCHEME_STRUCT:
+            print_string("READING STRUCT");
+            schema_struct_t struct_type = {0};
+            CHECK_ERROR(read_struct(&leaves->data, &struct_type));
+            CHECK_ERROR(get_named_link_index(struct_type.fields, struct_type.fields_qty, field_index, qty, max_indexes));
+            print_string("READING STRUCT DONE\n");
+            break;
+        case LINKING_SCHEME_TUPLE:
+            print_string("READING TUPLE");
+            schema_tuple_t tuple_type = {0};
+            CHECK_ERROR(read_tuple(&leaves->data, &tuple_type));
+            CHECK_ERROR(get_unnamed_link_index(tuple_type.fields, tuple_type.fields_qty, field_index, qty, max_indexes));
+            print_string("READING TUPLE DONE\n");
+            break;
+        case LINKING_SCHEME_OPTION:
+            print_string("READING OPTION");
+            link_t option_type = {0};
+            CHECK_ERROR(read_link(&leaves->data, &option_type));
+            if (option_type.tag == LINK_BY_INDEX) {
+                field_index[(*qty)++] = option_type.data.by_index;
+            }
+            print_string("READING OPTION DONE\n");
+            break;
+        case LINKING_SCHEME_ARRAY:
+            print_string("READING ARRAY");
+            schema_array_t array_type = {0};
+            CHECK_ERROR(read_array(&leaves->data, &array_type));
+            print_string("READING ARRAY DONE\n");
+            break;
+        case LINKING_SCHEME_VEC:
+            print_string("READING VEC");
+            link_t vec_type = {0};
+            CHECK_ERROR(read_link(&leaves->data, &vec_type));
+            if (vec_type.tag == LINK_BY_INDEX) {
+                field_index[(*qty)++] = vec_type.data.by_index;
+            }
+            print_string("READING VEC DONE\n");
+            break;
+        case LINKING_SCHEME_MAP:
+            print_string("READING MAP");
+            link_t key = {0};
+            link_t value = {0};
+            CHECK_ERROR(read_link(&leaves->data, &key));
+            CHECK_ERROR(read_link(&leaves->data, &value));
+            if (value.tag == LINK_BY_INDEX) {
+                field_index[(*qty)++] = value.data.by_index;
+            }
+            print_string("READING MAP DONE\n");
+            break;
+        default:
+            print_u8("UNKNOWN TYPE:", type);
+            CHECK_ERROR(schema_reset_leaf_offset(leaves));
+            return parser_unexpected_type;
+    }
+
+    for (uint16_t i = 0; i < *qty; i++) {
+        print_u32("field_index:", field_index[i]);
+    }
+
+    CHECK_ERROR(schema_reset_leaf_offset(leaves));
 
     return parser_ok;
 }

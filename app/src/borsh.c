@@ -69,6 +69,14 @@ void print_string(const char *str) {
 #endif
 }
 
+void print_string_title(const char *str, const char *title) {
+#if defined(LEDGER_SPECIFIC)
+    ZEMU_LOGF(100, "%s: %s\n", title, str);
+#else
+    printf("%s: %s\n", title, str);
+#endif
+}
+
 void print_u8(const char *str, uint8_t val) {
 #if defined(LEDGER_SPECIFIC)
     ZEMU_LOGF(100, "%s: %d\n", str, val);

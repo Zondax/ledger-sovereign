@@ -22,10 +22,9 @@ extern "C" {
 #include "bank_txdef.h"
 #include "paymaster_txdef.h"
 #include "schema_txdef.h"
-
+#include "ui_txdef.h"
 typedef struct {
     uint8_t type;
-    uint64_t call_message_index;
     union {
         bank_call_message_t bank;
         paymaster_call_message_t paymaster;
@@ -50,6 +49,9 @@ typedef struct {
     schema_t schema;
     merkle_proof_t merkle_proofs;
     unsigned_transaction_t unsigned_transaction;
+    parser_context_t unsigned_transaction_raw;
+    ui_items_t ui_items;
+    ui_items_t device_items;
 } parser_tx_t;
 
 #ifdef __cplusplus

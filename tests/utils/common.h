@@ -18,4 +18,4 @@
 
 #include "parser_common.h"
 
-std::vector<std::string> dumpUI(parser_context_t *ctx, uint16_t maxKeyLen, uint16_t maxValueLen);
+std::vector<std::string> dumpUI(parser_tx_t *txObj, uint16_t maxKeyLen, uint16_t maxValueLen);
