@@ -20,52 +20,6 @@
 #include "crypto_helper.h"
 #include "schema_proof.h"
 
-#if defined(TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX) || defined(TARGET_FLEX)
-#define STACK_SHIFT 20
-#define MINIMUM_STACK 400
-#else
-static uint16_t recursionDepthCounter = 0;
-#define MAX_RECURSION_DEPTH 50
-#endif
-
-/**
- * @brief Checks the available stack space to prevent stack overflow.
- *
- * @return parser_error_t Returns parser_running_out_of_stack if stack space is insufficient, otherwise parser_ok.
- */
-parser_error_t checkStack() {
-#if defined(TARGET_NANOS) || defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX) || defined(TARGET_FLEX)
-    // NOLINTNEXTLINE(readability-identifier-length): here `p` is fine
-    void *p = NULL;
-    const uint32_t availableStack = (uint32_t)((void *)&p) + STACK_SHIFT - (uint32_t)&app_stack_canary;
-    ZEMU_LOGF(50, "Available stack: %d\n", availableStack)
-    if (availableStack <= MINIMUM_STACK) {
-        return parser_running_out_of_stack;
-    }
-#else
-    if (recursionDepthCounter >= MAX_RECURSION_DEPTH) {
-        return parser_running_out_of_stack;
-    }
-    recursionDepthCounter++;
-#endif
-    return parser_ok;
-}
-
-/**
- * @brief Frees the stack space by decrementing the recursion depth counter.
- *
- * @return parser_error_t Always returns parser_ok.
- */
-parser_error_t freeStack() {
-#if !defined(TARGET_NANOS) && !defined(TARGET_NANOX) && !defined(TARGET_NANOS2) && !defined(TARGET_STAX) && \
-    !defined(TARGET_FLEX)
-    if (recursionDepthCounter > 0) {
-        recursionDepthCounter--;
-    }
-#endif
-    return parser_ok;
-}
-
 parser_error_t read_fixed_point_display(parser_context_t *ctx, fixed_point_display_t *display) {
     CHECK_INPUT(display);
     CHECK_INPUT(ctx);

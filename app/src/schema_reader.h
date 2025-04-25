@@ -22,21 +22,8 @@ extern "C" {
 
 #include "parser_common.h"
 
-parser_error_t checkStack();
-parser_error_t freeStack();
-
 parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj);
 parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj);
-
-// parser_error_t readType(parser_context_t *ctx, RegistryEntry_t *entry);
-// parser_error_t getVariant(parser_context_t *ctx, RegistryEntry_t *type, uint32_t typeId, uint8_t index);
-
-// Helpers
-// parser_error_t checkPathKeyword(Vector_t *path, const char *keyword, bool *found);
-// parser_error_t readSignedExtension(parser_context_t *ctx, SignedExtension_t *extension);
-// parser_error_t getType(parser_context_t *ctx, RegistryEntry_t *type, uint32_t typeId);
-// parser_error_t readField(parser_context_t *ctx, Field_t *entry);
-// parser_error_t readTypeRef(parser_context_t *ctx, TypeRef_t *type);
 
 #ifdef __cplusplus
 }

@@ -24,9 +24,11 @@
 #include "parser_common.h"
 #include "parser_impl.h"
 #include "schema_reader.h"
+#include "stack_manager.h"
 
 const uint8_t LEAF_PREFIX = 0x00;
 const uint8_t INNER_PREFIX = 0x01;
+const uint8_t HASH_BUFFER_QTY = 2;
 
 /**
  * @brief Calculate the largest power of two which is strictly less than the argument.
@@ -141,17 +143,17 @@ static parser_error_t merge_branches(const uint8_t left[CX_SHA256_SIZE], const u
     CHECK_INPUT(output);
 
     // TODO: remove this
-    bytes_t buffer_left = {0};
-    buffer_left.ptr = left;
-    buffer_left.len = CX_SHA256_SIZE;
-    print_buffer_u8(&buffer_left, "merge left");
-    print_buffer(&buffer_left, "merge left");
+    // bytes_t buffer_left = {0};
+    // buffer_left.ptr = left;
+    // buffer_left.len = CX_SHA256_SIZE;
+    // print_buffer_u8(&buffer_left, "merge left");
+    // print_buffer(&buffer_left, "merge left");
 
-    bytes_t buffer_right = {0};
-    buffer_right.ptr = right;
-    buffer_right.len = CX_SHA256_SIZE;
-    print_buffer_u8(&buffer_right, "merge right");
-    print_buffer(&buffer_right, "merge right");
+    // bytes_t buffer_right = {0};
+    // buffer_right.ptr = right;
+    // buffer_right.len = CX_SHA256_SIZE;
+    // print_buffer_u8(&buffer_right, "merge right");
+    // print_buffer(&buffer_right, "merge right");
 
     crypto_sha256_init();
     crypto_sha256_update(&INNER_PREFIX, 1);
@@ -159,10 +161,10 @@ static parser_error_t merge_branches(const uint8_t left[CX_SHA256_SIZE], const u
     crypto_sha256_update(right, CX_SHA256_SIZE);
     crypto_sha256_final(output);
 
-    bytes_t buffer_output = {0};
-    buffer_output.ptr = output;
-    buffer_output.len = CX_SHA256_SIZE;
-    print_buffer_u8(&buffer_output, "merge output");
+    // bytes_t buffer_output = {0};
+    // buffer_output.ptr = output;
+    // buffer_output.len = CX_SHA256_SIZE;
+    // print_buffer_u8(&buffer_output, "merge output");
 
     return parser_ok;
 }
@@ -275,6 +277,7 @@ static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_sta
     bool right_has_leaves = has_leaves(mid, index_end, &proof->indices);
 
     // Check left subtree
+    CHECK_ERROR(checkStack());
     uint8_t left[CX_SHA256_SIZE];
     if (left_has_leaves) {
         CHECK_ERROR(verify_multiproof_inner(proof, index_start, mid, left));
@@ -283,6 +286,7 @@ static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_sta
     }
 
     // Check right subtree
+    CHECK_ERROR(checkStack());
     uint8_t right[CX_SHA256_SIZE];
     if (right_has_leaves) {
         CHECK_ERROR(verify_multiproof_inner(proof, mid, index_end, right));
@@ -292,7 +296,8 @@ static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_sta
 
     merge_branches(left, right, hash);
 
-    return parser_ok;
+    // free stack for left and right
+    return freeStack(HASH_BUFFER_QTY);
 }
 
 /**
