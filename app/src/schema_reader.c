@@ -569,7 +569,8 @@ parser_error_t read_root_type_indices(parser_context_t *ctx, root_type_indices_t
     CHECK_INPUT(ctx);
 
     // save complete borsh data
-    root_type_indices->complete_borsh_data.ptr = ctx->buffer.ptr;
+    root_type_indices->complete_borsh_data.ptr = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem_complete_borsh_data = ctx->offset;
 
     // read length
     CHECK_ERROR(read_u32(ctx, &root_type_indices->qty));
@@ -586,7 +587,8 @@ parser_error_t read_root_type_indices(parser_context_t *ctx, root_type_indices_t
     root_type_indices->indices.buffer.ptr = ptr_mem_indices;
     root_type_indices->indices.buffer.len = ctx->offset - offset_mem_indices;
 
-    root_type_indices->complete_borsh_data.len = ctx->offset - offset_mem_indices + OFFSET_U32;
+    root_type_indices->complete_borsh_data.len = ctx->offset - offset_mem_complete_borsh_data;
+    print_buffer_u8(&root_type_indices->complete_borsh_data, "root_type_indices.complete_borsh_data");
 
     return parser_ok;
 }
@@ -656,6 +658,10 @@ parser_error_t read_chain_data(parser_context_t *ctx, chain_data_t *chain_data) 
     CHECK_INPUT(chain_data);
     CHECK_INPUT(ctx);
 
+    // save complete borsh data
+    chain_data->complete_borsh_data.ptr = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem = ctx->offset;
+
     // read chain_id
     CHECK_ERROR(read_u64(ctx, &chain_data->chain_id));
     print_u64("chain_data.chain_id:", chain_data->chain_id);
@@ -675,6 +681,8 @@ parser_error_t read_chain_data(parser_context_t *ctx, chain_data_t *chain_data) 
 
     // read name_registries
     CHECK_ERROR(read_name_registries(ctx, &chain_data->name_registries));
+
+    chain_data->complete_borsh_data.len = ctx->offset - offset_mem;
 
     return parser_ok;
 }
@@ -815,6 +823,18 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     return parser_ok;
 }
 
+parser_error_t compute_internal_data_hash(parser_tx_t *txObj, uint8_t internal_data_hash[CX_SHA256_SIZE]) {
+    CHECK_INPUT(txObj);
+    CHECK_INPUT(internal_data_hash);
+
+    crypto_sha256_init();
+    crypto_sha256_update(txObj->merkle_proofs.root_type_indices.complete_borsh_data.ptr, txObj->merkle_proofs.root_type_indices.complete_borsh_data.len);
+    crypto_sha256_update(txObj->merkle_proofs.chain_data.complete_borsh_data.ptr, txObj->merkle_proofs.chain_data.complete_borsh_data.len);
+    crypto_sha256_final(internal_data_hash);
+    
+    return parser_ok;
+}
+
 // | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash) | borsh(root_indexes) |
 // borsh(chain_data)
 parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
@@ -877,7 +897,7 @@ parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     // read root_type_indices
     CHECK_ERROR(read_root_type_indices(ctx, &txObj->merkle_proofs.root_type_indices));
 
-    // read name_registries
+    // read chain_data
     CHECK_ERROR(read_chain_data(ctx, &txObj->merkle_proofs.chain_data));
 
     // // TODO: check that we have consumed all data
@@ -890,100 +910,15 @@ parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
 
     CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proofs));
 
-    return parser_ok;
-}
+    // compute internal data hash
+    uint8_t internal_data_hash[CX_SHA256_SIZE];
+    CHECK_ERROR(compute_internal_data_hash(txObj, internal_data_hash));
+    bytes_t internal_data_hash_bytes = {0};
+    internal_data_hash_bytes.ptr = internal_data_hash;
+    internal_data_hash_bytes.len = CX_SHA256_SIZE;
+    print_buffer(&internal_data_hash_bytes, "internal_data_hash");
 
-parser_error_t get_leave_index(merkle_leaves_data_t *leaves, merkle_leaves_indices_t *indices, uint32_t schema_index,
-                               uint32_t field_index[], uint16_t *qty, uint16_t max_indexes) {
-    CHECK_INPUT(leaves);
-    CHECK_INPUT(indices);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-    *qty = 0;
-
-    uint64_t index_vec = 0;
-    if (!schema_find_index(schema_index, indices, &index_vec)) {
-        return parser_schema_index_not_found;
-    }
-
-    CHECK_ERROR(schema_move_leaf_offset(leaves, index_vec));
-
-    // read len
-    uint32_t len = 0;
-    CHECK_ERROR(read_u32(&leaves->data, &len));
-
-    // read type
-    uint8_t type = 0;
-    CHECK_ERROR(read_u8(&leaves->data, &type));
-
-    switch (type) {
-        case LINKING_SCHEME_ENUM:
-            print_string("READING ENUM");
-            schema_enum_t enum_type = {0};
-            CHECK_ERROR(read_enum(&leaves->data, &enum_type));
-            CHECK_ERROR(get_variant_link_index(enum_type.variants, enum_type.variants_qty, field_index, qty, max_indexes));
-            print_string("READING ENUM DONE\n");
-            break;
-        case LINKING_SCHEME_STRUCT:
-            print_string("READING STRUCT");
-            schema_struct_t struct_type = {0};
-            CHECK_ERROR(read_struct(&leaves->data, &struct_type));
-            CHECK_ERROR(get_named_link_index(struct_type.fields, struct_type.fields_qty, field_index, qty, max_indexes));
-            print_string("READING STRUCT DONE\n");
-            break;
-        case LINKING_SCHEME_TUPLE:
-            print_string("READING TUPLE");
-            schema_tuple_t tuple_type = {0};
-            CHECK_ERROR(read_tuple(&leaves->data, &tuple_type));
-            CHECK_ERROR(get_unnamed_link_index(tuple_type.fields, tuple_type.fields_qty, field_index, qty, max_indexes));
-            print_string("READING TUPLE DONE\n");
-            break;
-        case LINKING_SCHEME_OPTION:
-            print_string("READING OPTION");
-            link_t option_type = {0};
-            CHECK_ERROR(read_link(&leaves->data, &option_type));
-            if (option_type.tag == LINK_BY_INDEX) {
-                field_index[(*qty)++] = option_type.data.by_index;
-            }
-            print_string("READING OPTION DONE\n");
-            break;
-        case LINKING_SCHEME_ARRAY:
-            print_string("READING ARRAY");
-            schema_array_t array_type = {0};
-            CHECK_ERROR(read_array(&leaves->data, &array_type));
-            print_string("READING ARRAY DONE\n");
-            break;
-        case LINKING_SCHEME_VEC:
-            print_string("READING VEC");
-            link_t vec_type = {0};
-            CHECK_ERROR(read_link(&leaves->data, &vec_type));
-            if (vec_type.tag == LINK_BY_INDEX) {
-                field_index[(*qty)++] = vec_type.data.by_index;
-            }
-            print_string("READING VEC DONE\n");
-            break;
-        case LINKING_SCHEME_MAP:
-            print_string("READING MAP");
-            link_t key = {0};
-            link_t value = {0};
-            CHECK_ERROR(read_link(&leaves->data, &key));
-            CHECK_ERROR(read_link(&leaves->data, &value));
-            if (value.tag == LINK_BY_INDEX) {
-                field_index[(*qty)++] = value.data.by_index;
-            }
-            print_string("READING MAP DONE\n");
-            break;
-        default:
-            print_u8("UNKNOWN TYPE:", type);
-            CHECK_ERROR(schema_reset_leaf_offset(leaves));
-            return parser_unexpected_type;
-    }
-
-    for (uint16_t i = 0; i < *qty; i++) {
-        print_u32("field_index:", field_index[i]);
-    }
-
-    CHECK_ERROR(schema_reset_leaf_offset(leaves));
+    
 
     return parser_ok;
 }

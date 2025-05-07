@@ -31,8 +31,6 @@ parser_error_t read_link(parser_context_t *ctx, link_t *link);
 
 parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj);
 parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj);
-parser_error_t get_leave_index(merkle_leaves_data_t *leaves, merkle_leaves_indices_t *indices, uint32_t schema_index,
-                               uint32_t field_index[], uint16_t *qty, uint16_t max_indexes);
 
 #ifdef __cplusplus
 }
