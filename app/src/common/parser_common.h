@@ -65,6 +65,7 @@ typedef enum {
     parser_root_type_indices_overflow,
     parser_scheme_indices_overflow,
     parser_unexpected_root_hash,
+    parser_unexpected_chain_hash,
     parser_schema_index_not_found,
     parser_scheme_named_link_index_overflow,
     parser_scheme_unnamed_link_index_overflow,

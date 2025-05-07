@@ -78,13 +78,13 @@ parser_error_t get_schema_unsigned_transaction_index(parser_tx_t *txObj, uint64_
     CHECK_INPUT(txObj);
 
     // Get root index
-    if (txObj->merkle_proofs.root_type_indices.qty <= ROLLUP_ROOTS_UNSIGNED_TRANSACTION) {
+    if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_UNSIGNED_TRANSACTION) {
         return parser_root_type_indices_overflow;
     }
 
-    txObj->merkle_proofs.root_type_indices.indices.offset = OFFSET_U64 * ROLLUP_ROOTS_UNSIGNED_TRANSACTION;
-    CHECK_ERROR(read_u64(&txObj->merkle_proofs.root_type_indices.indices, root_index));
-    txObj->merkle_proofs.root_type_indices.indices.offset = 0;
+    txObj->schema.root_type_indices.indices.offset = OFFSET_U64 * ROLLUP_ROOTS_UNSIGNED_TRANSACTION;
+    CHECK_ERROR(read_u64(&txObj->schema.root_type_indices.indices, root_index));
+    txObj->schema.root_type_indices.indices.offset = 0;
 
     return parser_ok;
 }

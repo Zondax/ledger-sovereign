@@ -37,19 +37,11 @@ typedef struct {
 } merkle_lemmas_t;
 
 typedef struct {
-    uint32_t qty;
-    parser_context_t indices;
-    bytes_t complete_borsh_data;
-} root_type_indices_t;
-
-typedef struct {
     merkle_leaves_data_t leaves;
     merkle_leaves_indices_t indices;
     merkle_lemmas_t lemmas;
     uint64_t tree_size;
     bytes_t root_hash;
-    root_type_indices_t root_type_indices;
-    chain_data_t chain_data;
 } merkle_proof_t;
 
 #ifdef __cplusplus

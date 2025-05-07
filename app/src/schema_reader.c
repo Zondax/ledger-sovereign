@@ -784,20 +784,22 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
 
-    CHECK_ERROR(read_u32(ctx, &txObj->schema.types.qty));
-    print_u32("types.qty:", txObj->schema.types.qty);
-    if (txObj->schema.types.qty > MAX_SCHEMES_QTY) {
+    types_t types = {0};
+
+    CHECK_ERROR(read_u32(ctx, &types.qty));
+    print_u32("types.qty:", types.qty);
+    if (types.qty > MAX_SCHEMES_QTY) {
         return parser_too_many_schemes;
     }
 
-    for (uint32_t i = 0; i < txObj->schema.types.qty; i++) {
+    for (uint32_t i = 0; i < types.qty; i++) {
         // read type
         const uint8_t *ptr_mem = ctx->buffer.ptr + ctx->offset;
         uint16_t offset_mem = ctx->offset;
-        CHECK_ERROR(read_u8(ctx, (uint8_t *)&txObj->schema.types.schemes[i].type));
-        CHECK_ERROR(read_schema_type(ctx, txObj->schema.types.schemes[i].type));
-        txObj->schema.types.schemes[i].data.buffer.ptr = ptr_mem;
-        txObj->schema.types.schemes[i].data.buffer.len = ctx->offset - offset_mem;
+        CHECK_ERROR(read_u8(ctx, (uint8_t *)&types.schemes[i].type));
+        CHECK_ERROR(read_schema_type(ctx, types.schemes[i].type));
+        types.schemes[i].data.buffer.ptr = ptr_mem;
+        types.schemes[i].data.buffer.len = ctx->offset - offset_mem;
     }
 
     // read root_type_indices
@@ -807,9 +809,10 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_ERROR(read_chain_data(ctx, &txObj->schema.chain_data));
 
     // read extra_metadata_hash
-    txObj->schema.extra_metadata_hash.len = 32;
+
     txObj->schema.extra_metadata_hash.ptr = ctx->buffer.ptr + ctx->offset;
-    CTX_CHECK_AND_ADVANCE(ctx, txObj->schema.extra_metadata_hash.len);
+    txObj->schema.extra_metadata_hash.len = CX_SHA256_SIZE;
+    CTX_CHECK_AND_ADVANCE(ctx, CX_SHA256_SIZE);
     print_buffer(&txObj->schema.extra_metadata_hash, "extra_metadata_hash");
 
     // TODO: check that we have consumed all data
@@ -823,15 +826,34 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     return parser_ok;
 }
 
-parser_error_t compute_internal_data_hash(parser_tx_t *txObj, uint8_t internal_data_hash[CX_SHA256_SIZE]) {
+parser_error_t compute_internal_data_hash(parser_tx_t *txObj, uint8_t *internal_data_hash) {
     CHECK_INPUT(txObj);
     CHECK_INPUT(internal_data_hash);
 
     crypto_sha256_init();
-    crypto_sha256_update(txObj->merkle_proofs.root_type_indices.complete_borsh_data.ptr, txObj->merkle_proofs.root_type_indices.complete_borsh_data.len);
-    crypto_sha256_update(txObj->merkle_proofs.chain_data.complete_borsh_data.ptr, txObj->merkle_proofs.chain_data.complete_borsh_data.len);
+    crypto_sha256_update(txObj->schema.root_type_indices.complete_borsh_data.ptr, txObj->schema.root_type_indices.complete_borsh_data.len);
+    crypto_sha256_update(txObj->schema.chain_data.complete_borsh_data.ptr, txObj->schema.chain_data.complete_borsh_data.len);
     crypto_sha256_final(internal_data_hash);
     
+    return parser_ok;
+}
+
+parser_error_t compute_chain_hash(parser_tx_t *txObj) {
+    CHECK_INPUT(txObj);
+
+    uint8_t internal_data_hash[CX_SHA256_SIZE] = {0};
+    uint8_t computed_chain_hash[CX_SHA256_SIZE] = {0};
+    CHECK_ERROR(compute_internal_data_hash(txObj, internal_data_hash));
+
+    crypto_sha256_init();
+    crypto_sha256_update(txObj->merkle_proofs.root_hash.ptr, txObj->merkle_proofs.root_hash.len);
+    crypto_sha256_update(internal_data_hash, CX_SHA256_SIZE);
+    crypto_sha256_update(txObj->schema.extra_metadata_hash.ptr, txObj->schema.extra_metadata_hash.len);
+    crypto_sha256_final(computed_chain_hash);
+    
+    if (MEMCMP(computed_chain_hash, txObj->schema.chain_hash.ptr, CX_SHA256_SIZE) != 0) {
+        return parser_unexpected_chain_hash;
+    }
     return parser_ok;
 }
 
@@ -895,30 +917,26 @@ parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     print_buffer(&txObj->merkle_proofs.root_hash, "root_hash");
 
     // read root_type_indices
-    CHECK_ERROR(read_root_type_indices(ctx, &txObj->merkle_proofs.root_type_indices));
+    CHECK_ERROR(read_root_type_indices(ctx, &txObj->schema.root_type_indices));
 
     // read chain_data
-    CHECK_ERROR(read_chain_data(ctx, &txObj->merkle_proofs.chain_data));
+    CHECK_ERROR(read_chain_data(ctx, &txObj->schema.chain_data));
 
-    // // TODO: check that we have consumed all data
-    // if (ctx->offset != ctx->buffer.len) {
-    //     print_string("Failed to parse metadata\n");
-    //     return parser_unexpected_error;
-    // } else {
-    //     print_string("Successfully parsed metadata\n");
-    // }
+    // read extra_metadata_hash
+    txObj->schema.extra_metadata_hash.ptr = ctx->buffer.ptr + ctx->offset;
+    txObj->schema.extra_metadata_hash.len = CX_SHA256_SIZE;
+    CTX_CHECK_AND_ADVANCE(ctx, CX_SHA256_SIZE);
+    print_buffer(&txObj->schema.extra_metadata_hash, "extra_metadata_hash");
+
+    // read chain hash
+    txObj->schema.chain_hash.ptr = ctx->buffer.ptr + ctx->offset;
+    txObj->schema.chain_hash.len = CX_SHA256_SIZE;
+    CTX_CHECK_AND_ADVANCE(ctx, CX_SHA256_SIZE);
 
     CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proofs));
 
-    // compute internal data hash
-    uint8_t internal_data_hash[CX_SHA256_SIZE];
-    CHECK_ERROR(compute_internal_data_hash(txObj, internal_data_hash));
-    bytes_t internal_data_hash_bytes = {0};
-    internal_data_hash_bytes.ptr = internal_data_hash;
-    internal_data_hash_bytes.len = CX_SHA256_SIZE;
-    print_buffer(&internal_data_hash_bytes, "internal_data_hash");
-
-    
+    // compute chain hash
+    CHECK_ERROR(compute_chain_hash(txObj));
 
     return parser_ok;
 }

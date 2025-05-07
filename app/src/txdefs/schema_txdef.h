@@ -21,6 +21,7 @@ extern "C" {
 
 #include "common_txdef.h"
 #include "merkle_txdef.h"
+#include "crypto_helper.h"
 
 #define MAX_FIELDS_QTY 20
 #define MAX_VARIANTS_QTY 20
@@ -268,7 +269,12 @@ typedef struct {
 } types_t;
 
 typedef struct {
-    types_t types;
+    uint32_t qty;
+    parser_context_t indices;
+    bytes_t complete_borsh_data;
+} root_type_indices_t;
+
+typedef struct {
     root_type_indices_t root_type_indices;
     chain_data_t chain_data;
     bytes_t extra_metadata_hash;

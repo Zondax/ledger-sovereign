@@ -84,6 +84,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "scheme indices overflow";
         case parser_unexpected_root_hash:
             return "unexpected root hash";
+        case parser_unexpected_chain_hash:
+            return "unexpected chain hash";
         case parser_schema_index_not_found:
             return "schema index not found";
         case parser_scheme_named_link_index_overflow:

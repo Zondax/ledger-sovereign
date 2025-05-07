@@ -39,7 +39,7 @@ parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *in
     print_buffer_str(name, "Name");
     print_buffer_str(input_token, "Input token");
 
-    name_registries_t registries = txObj->merkle_proofs.chain_data.name_registries;
+    name_registries_t registries = txObj->schema.chain_data.name_registries;
     for (uint32_t i = 0; i < registries.qty; i++) {
         if (registries.vec_registries[i].name.len == name->len &&
             MEMCMP(registries.vec_registries[i].name.ptr, name->ptr, name->len) == 0) {

@@ -315,7 +315,7 @@ parser_error_t verify_merkle_proofs(const merkle_proof_t *metadata) {
     CHECK_ERROR(get_root_hash(metadata, root_hash));
 
     // compare root_hash received with computed root_hash
-    if (memcmp(metadata->root_hash.ptr, root_hash, CX_SHA256_SIZE) != 0) {
+    if (MEMCMP(metadata->root_hash.ptr, root_hash, CX_SHA256_SIZE) != 0) {
         return parser_unexpected_root_hash;
     }
 
