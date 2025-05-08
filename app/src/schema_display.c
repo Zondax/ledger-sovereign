@@ -36,24 +36,19 @@ parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *in
     CHECK_INPUT(name);
     CHECK_INPUT(input_token);
 
-    print_buffer_str(name, "Name");
-    print_buffer_str(input_token, "Input token");
-
     name_registries_t registries = txObj->schema.chain_data.name_registries;
     for (uint32_t i = 0; i < registries.qty; i++) {
-        if (registries.vec_registries[i].name.len == name->len &&
-            MEMCMP(registries.vec_registries[i].name.ptr, name->ptr, name->len) == 0) {
-            for (uint32_t j = 0; j < registries.vec_registries[i].qty; j++) {
-                print_buffer_str(&registries.vec_registries[i].registry[j].data, "Registry data");
-                print_buffer_str(input_token, "Input token");
-                if (registries.vec_registries[i].registry[j].data.len == input_token->len &&
-                    MEMCMP(registries.vec_registries[i].registry[j].data.ptr, input_token->ptr, input_token->len) == 0) {
+        name_registry_t name_registry = {0};
+        CHECK_ERROR(read_name_registry(&registries.vec_registries, &name_registry));
+        if (name_registry.name.len == name->len && MEMCMP(name_registry.name.ptr, name->ptr, name->len) == 0) {
+            for (uint32_t j = 0; j < name_registry.qty; j++) {
+                registry_t registry = {0};
+                CHECK_ERROR(read_registry(&name_registry.registry, &registry));
+                if (registry.data.len == input_token->len &&
+                    MEMCMP(registry.data.ptr, input_token->ptr, input_token->len) == 0) {
                     MEMZERO(item_data, sizeof(item_data));
-                    MEMCPY(item_data, registries.vec_registries[i].registry[j].name.ptr,
-                           registries.vec_registries[i].registry[j].name.len);
-                    append_item_data(item_data, registries.vec_registries[i].registry[j].name.len);
-                    print_buffer_str(&registries.vec_registries[i].registry[j].name, "Registry name");
-                    print_string("Found name registry\n");
+                    MEMCPY(item_data, registry.name.ptr, registry.name.len);
+                    append_item_data(item_data, registry.name.len);
                     return parser_ok;
                 }
             }

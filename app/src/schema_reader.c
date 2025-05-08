@@ -633,9 +633,13 @@ parser_error_t read_name_registry(parser_context_t *ctx, name_registry_t *name_r
     print_u32("name_registry.qty:", name_registry->qty);
 
     // read registries
+    name_registry->registry.buffer.ptr = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem = ctx->offset;
     for (uint32_t i = 0; i < name_registry->qty; i++) {
-        CHECK_ERROR(read_registry(ctx, &name_registry->registry[i]));
+        registry_t registry = {0};
+        CHECK_ERROR(read_registry(ctx, &registry));
     }
+    name_registry->registry.buffer.len = ctx->offset - offset_mem;
     return parser_ok;
 }
 
@@ -648,9 +652,13 @@ parser_error_t read_name_registries(parser_context_t *ctx, name_registries_t *na
     print_u32("name_registries.qty:", name_registries->qty);
 
     // read registries
+    name_registries->vec_registries.buffer.ptr = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem = ctx->offset;
     for (uint32_t i = 0; i < name_registries->qty; i++) {
-        CHECK_ERROR(read_name_registry(ctx, &name_registries->vec_registries[i]));
+        name_registry_t name_registry = {0};
+        CHECK_ERROR(read_name_registry(ctx, &name_registry));
     }
+    name_registries->vec_registries.buffer.len = ctx->offset - offset_mem;
     return parser_ok;
 }
 
@@ -784,22 +792,15 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
 
-    types_t types = {0};
+    uint32_t qty = 0;
+    CHECK_ERROR(read_u32(ctx, &qty));
+    print_u32("types.qty:", qty);
 
-    CHECK_ERROR(read_u32(ctx, &types.qty));
-    print_u32("types.qty:", types.qty);
-    if (types.qty > MAX_SCHEMES_QTY) {
-        return parser_too_many_schemes;
-    }
-
-    for (uint32_t i = 0; i < types.qty; i++) {
+    for (uint32_t i = 0; i < qty; i++) {
         // read type
-        const uint8_t *ptr_mem = ctx->buffer.ptr + ctx->offset;
-        uint16_t offset_mem = ctx->offset;
-        CHECK_ERROR(read_u8(ctx, (uint8_t *)&types.schemes[i].type));
-        CHECK_ERROR(read_schema_type(ctx, types.schemes[i].type));
-        types.schemes[i].data.buffer.ptr = ptr_mem;
-        types.schemes[i].data.buffer.len = ctx->offset - offset_mem;
+        uint8_t type = 0;
+        CHECK_ERROR(read_u8(ctx, (uint8_t *)&type));
+        CHECK_ERROR(read_schema_type(ctx, type));
     }
 
     // read root_type_indices
@@ -809,7 +810,6 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_ERROR(read_chain_data(ctx, &txObj->schema.chain_data));
 
     // read extra_metadata_hash
-
     txObj->schema.extra_metadata_hash.ptr = ctx->buffer.ptr + ctx->offset;
     txObj->schema.extra_metadata_hash.len = CX_SHA256_SIZE;
     CTX_CHECK_AND_ADVANCE(ctx, CX_SHA256_SIZE);
@@ -831,10 +831,11 @@ parser_error_t compute_internal_data_hash(parser_tx_t *txObj, uint8_t *internal_
     CHECK_INPUT(internal_data_hash);
 
     crypto_sha256_init();
-    crypto_sha256_update(txObj->schema.root_type_indices.complete_borsh_data.ptr, txObj->schema.root_type_indices.complete_borsh_data.len);
+    crypto_sha256_update(txObj->schema.root_type_indices.complete_borsh_data.ptr,
+                         txObj->schema.root_type_indices.complete_borsh_data.len);
     crypto_sha256_update(txObj->schema.chain_data.complete_borsh_data.ptr, txObj->schema.chain_data.complete_borsh_data.len);
     crypto_sha256_final(internal_data_hash);
-    
+
     return parser_ok;
 }
 
@@ -850,7 +851,7 @@ parser_error_t compute_chain_hash(parser_tx_t *txObj) {
     crypto_sha256_update(internal_data_hash, CX_SHA256_SIZE);
     crypto_sha256_update(txObj->schema.extra_metadata_hash.ptr, txObj->schema.extra_metadata_hash.len);
     crypto_sha256_final(computed_chain_hash);
-    
+
     if (MEMCMP(computed_chain_hash, txObj->schema.chain_hash.ptr, CX_SHA256_SIZE) != 0) {
         return parser_unexpected_chain_hash;
     }

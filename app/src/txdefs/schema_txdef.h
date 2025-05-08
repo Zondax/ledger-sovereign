@@ -20,15 +20,12 @@ extern "C" {
 #endif
 
 #include "common_txdef.h"
-#include "merkle_txdef.h"
 #include "crypto_helper.h"
+#include "merkle_txdef.h"
 
 #define MAX_FIELDS_QTY 20
 #define MAX_VARIANTS_QTY 20
 #define MAX_HRP_LEN 83
-#define MAX_SCHEMES_QTY 200
-#define MAX_NAME_REGISTRIES_QTY 5
-#define MAX_REGISTRIES_QTY 5
 
 typedef enum {
     ROLLUP_ROOTS_TRANSACTION = 0,
@@ -257,22 +254,52 @@ typedef struct {
     link_t value;
 } schema_map_t;
 
-// this struct is used to store where the schema starts in the input buffer
 typedef struct {
     linking_scheme_e type;
-    parser_context_t data;
+    union {
+        schema_enum_t enum_type;
+        schema_struct_t struct_type;
+        schema_tuple_t tuple_type;
+        link_t option_type;
+        primitive_integer_t integer_type;
+        primitive_byte_array_t byte_array_type;
+        uint64_t skip_type;
+        byte_display_t byte_vec_type;
+        schema_array_t array_type;
+        link_t vec_type;
+        schema_map_t map_type;
+    };
 } linking_scheme_t;
-
-typedef struct {
-    uint32_t qty;
-    linking_scheme_t schemes[MAX_SCHEMES_QTY];
-} types_t;
 
 typedef struct {
     uint32_t qty;
     parser_context_t indices;
     bytes_t complete_borsh_data;
 } root_type_indices_t;
+
+typedef struct {
+    bytes_t data;
+    bytes_t name;
+} registry_t;
+
+typedef struct {
+    bytes_t name;
+    uint32_t qty;
+    parser_context_t registry;
+} name_registry_t;
+
+typedef struct {
+    uint32_t qty;
+    parser_context_t vec_registries;
+} name_registries_t;
+
+typedef struct {
+    uint64_t chain_id;
+    bytes_t chain_name;
+    uint8_t gas_token_decimals;
+    name_registries_t name_registries;
+    bytes_t complete_borsh_data;
+} chain_data_t;
 
 typedef struct {
     root_type_indices_t root_type_indices;
