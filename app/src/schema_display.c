@@ -351,28 +351,25 @@ parser_error_t schema_display_tuple(parser_tx_t *txObj) {
     CHECK_ERROR(read_tuple(&txObj->merkle_proofs.leaves.data, &tuple_type));
     CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
 
-    uint32_t field_index[MAX_FIELDS_QTY] = {0};
-    uint16_t index_qty = 0;
-    uint32_t max_indexes = MAX_FIELDS_QTY;
-    CHECK_ERROR(get_unnamed_link_index(tuple_type.fields, tuple_type.fields_qty, field_index, &index_qty, max_indexes));
+    // for (uint32_t i = 0; i < index_qty; i++) {
+    //     uint8_t type = 0;
+    //     CHECK_ERROR(get_schema_type(txObj, field_index[i], &type));
+    //     print_u8("Type: ", type);
+    //     if (type == LINKING_SCHEME_INTEGER) {
+    //         // TODO: Implement me
+    //         print_string("schema_display_tuple IMPLEMENT ME 0");
+    //         return parser_unexpected_type;
+    //     }
+    // }
 
-    for (uint32_t i = 0; i < index_qty; i++) {
-        uint8_t type = 0;
-        CHECK_ERROR(get_schema_type(txObj, field_index[i], &type));
-        print_u8("Type: ", type);
-        if (type == LINKING_SCHEME_INTEGER) {
-            // TODO: Implement me
-            print_string("schema_display_tuple IMPLEMENT ME 0");
-            return parser_unexpected_type;
-        }
-    }
-
+    unnamed_field_t unnamed_field = {0};
     if (tuple_type.has_show_as || tuple_type.has_structured_show_as) {
         for (uint32_t i = 0; i < tuple_type.fields_qty; i++) {
-            // TODO: check context_bytes and container_context
-            switch (tuple_type.fields[i].value.tag) {
+            MEMZERO(&unnamed_field, sizeof(unnamed_field_t));
+            CHECK_ERROR(read_unnamed_field(&tuple_type.unnamed_fields, &unnamed_field));
+            switch (unnamed_field.value.tag) {
                 case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(txObj, tuple_type.fields[i].value.data.by_index));
+                    CHECK_ERROR(schema_display_generic_by_index(txObj, unnamed_field.value.data.by_index));
                     break;
                 default:
                     print_string("Tuple field is not a link by index\n");
@@ -381,13 +378,14 @@ parser_error_t schema_display_tuple(parser_tx_t *txObj) {
         }
     } else {
         for (uint32_t i = 0; i < tuple_type.fields_qty; i++) {
-            // TODO: check context_bytes and container_context
-            switch (tuple_type.fields[i].value.tag) {
+            MEMZERO(&unnamed_field, sizeof(unnamed_field_t));
+            CHECK_ERROR(read_unnamed_field(&tuple_type.unnamed_fields, &unnamed_field));
+            switch (unnamed_field.value.tag) {
                 case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(txObj, tuple_type.fields[i].value.data.by_index));
+                    CHECK_ERROR(schema_display_generic_by_index(txObj, unnamed_field.value.data.by_index));
                     break;
                 case LINK_IMMEDIATE:
-                    CHECK_ERROR(schema_display_by_primitive(txObj, &tuple_type.fields[i].value.data.immediate));
+                    CHECK_ERROR(schema_display_by_primitive(txObj, &unnamed_field.value.data.immediate));
                     break;
                 default:
                     print_string("Tuple field is not a link by index\n");
@@ -397,7 +395,7 @@ parser_error_t schema_display_tuple(parser_tx_t *txObj) {
                 return parser_ok;
             }
 
-            if (!tuple_type.fields[i].is_expert || ui_expert_mode) {
+            if (!unnamed_field.is_expert || ui_expert_mode) {
                 char index_str[12] = {0};
                 snprintf(index_str, sizeof(index_str), "%u", i);
                 CHECK_ERROR(append_item_title(index_str, strlen(index_str)));

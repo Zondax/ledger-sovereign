@@ -77,22 +77,6 @@ parser_error_t schema_reset_leaf_offset(merkle_leaves_data_t *leaves) {
     return parser_ok;
 }
 
-parser_error_t get_unnamed_link_index(unnamed_field_t *fields, uint32_t fields_qty, uint32_t field_index[], uint16_t *qty,
-                                      uint16_t max_indexes) {
-    CHECK_INPUT(fields);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-    *qty = 0;
-
-    for (uint32_t i = 0; i < fields_qty; i++) {
-        if (fields[i].value.tag == LINK_BY_INDEX) {
-            field_index[(*qty)++] = fields[i].value.data.by_index;
-        }
-    }
-
-    return (*qty >= max_indexes) ? parser_scheme_unnamed_link_index_overflow : parser_ok;
-}
-
 parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type) {
     CHECK_INPUT(txObj);
     CHECK_INPUT(type);

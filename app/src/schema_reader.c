@@ -466,10 +466,8 @@ parser_error_t read_struct(parser_context_t *ctx, schema_struct_t *schema_struct
 
     // read fields
     CHECK_ERROR(read_u32(ctx, &schema_struct->fields_qty));
-    if (schema_struct->fields_qty > MAX_FIELDS_QTY) {
-        return parser_too_many_fields;
-    }
     print_u32("fields_qty:", schema_struct->fields_qty);
+
     schema_struct->named_fields.buffer.ptr = ctx->buffer.ptr + ctx->offset;
     uint16_t offset_mem = ctx->offset;
     for (uint32_t i = 0; i < schema_struct->fields_qty; i++) {
@@ -526,15 +524,15 @@ parser_error_t read_tuple(parser_context_t *ctx, schema_tuple_t *schema_tuple) {
 
     // read fields
     CHECK_ERROR(read_u32(ctx, &schema_tuple->fields_qty));
-    if (schema_tuple->fields_qty > MAX_FIELDS_QTY) {
-        return parser_too_many_fields;
-    }
     print_u32("fields_qty:", schema_tuple->fields_qty);
+
+    schema_tuple->unnamed_fields.buffer.ptr = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem = ctx->offset;
     for (uint32_t i = 0; i < schema_tuple->fields_qty; i++) {
         unnamed_field_t field = {0};
         CHECK_ERROR(read_unnamed_field(ctx, &field));
-        schema_tuple->fields[i] = field;
     }
+    schema_tuple->unnamed_fields.buffer.len = ctx->offset - offset_mem;
 
     // read structured_display_overrides
     CHECK_ERROR(read_structured_display_overrides(ctx, &schema_tuple->structured_display_overrides));
