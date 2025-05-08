@@ -219,7 +219,7 @@ typedef struct {
     bytes_t structured_show_as;
     bool peekable;
     uint32_t fields_qty;
-    named_field_t fields[MAX_FIELDS_QTY];
+    parser_context_t named_fields;
     structured_display_overrides_t structured_display_overrides;
 } schema_struct_t;
 

@@ -77,31 +77,6 @@ parser_error_t schema_reset_leaf_offset(merkle_leaves_data_t *leaves) {
     return parser_ok;
 }
 
-/**
- * @brief Get the link index of the fields.
- *
- * @param fields The fields.
- * @param fields_qty The number of fields.
- * @param field_index The field index.
- * @param qty The quantity of fields.
- * @param max_indexes The maximum number of fields.
- * @return parser_error_t The error code.
- */
-parser_error_t get_named_link_index(named_field_t *fields, uint32_t fields_qty, uint32_t field_index[], uint16_t *qty,
-                                    uint16_t max_indexes) {
-    CHECK_INPUT(fields);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-
-    for (uint32_t i = 0; i < fields_qty; i++) {
-        if (fields[i].value.tag == LINK_BY_INDEX) {
-            field_index[(*qty)++] = fields[i].value.data.by_index;
-        }
-    }
-
-    return (*qty >= max_indexes) ? parser_scheme_named_link_index_overflow : parser_ok;
-}
-
 parser_error_t get_unnamed_link_index(unnamed_field_t *fields, uint32_t fields_qty, uint32_t field_index[], uint16_t *qty,
                                       uint16_t max_indexes) {
     CHECK_INPUT(fields);

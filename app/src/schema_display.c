@@ -271,45 +271,42 @@ parser_error_t schema_display_struct(parser_tx_t *txObj) {
     CHECK_ERROR(read_struct(&txObj->merkle_proofs.leaves.data, &struct_type));
     CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
 
-    uint32_t field_index[MAX_FIELDS_QTY] = {0};
-    uint16_t index_qty = 0;
-    uint32_t max_indexes = MAX_FIELDS_QTY;
-    CHECK_ERROR(get_named_link_index(struct_type.fields, struct_type.fields_qty, field_index, &index_qty, max_indexes));
+    // for (uint32_t i = 0; i < index_qty; i++) {
+    //     uint8_t type = 0;
+    //     CHECK_ERROR(get_schema_type(txObj, field_index[i], &type));
+    //     print_u8("Type: ", type);
+    //     if (type == LINKING_SCHEME_INTEGER) {
+    //         // TODO: Implement me
+    //         print_string("schema_display_struct IMPLEMENT ME 0");
+    //         return parser_unexpected_type;
+    //     }
+    // }
 
-    for (uint32_t i = 0; i < index_qty; i++) {
-        uint8_t type = 0;
-        CHECK_ERROR(get_schema_type(txObj, field_index[i], &type));
-        print_u8("Type: ", type);
-        if (type == LINKING_SCHEME_INTEGER) {
-            // TODO: Implement me
-            print_string("schema_display_struct IMPLEMENT ME 0");
-            return parser_unexpected_type;
-        }
-    }
-
+    named_field_t named_field = {0};
     if (struct_type.has_show_as || struct_type.has_structured_show_as) {
         print_buffer_str(&struct_type.show_as, "Show as");
         print_buffer_str(&struct_type.structured_show_as, "Structured show as");
         for (uint32_t i = 0; i < struct_type.fields_qty; i++) {
-            // TODO: check context_bytes and container_context
-            switch (struct_type.fields[i].value.tag) {
+            MEMZERO(&named_field, sizeof(named_field_t));
+            CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
+            switch (named_field.value.tag) {
                 case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(txObj, struct_type.fields[i].value.data.by_index));
+                    CHECK_ERROR(schema_display_generic_by_index(txObj, named_field.value.data.by_index));
                     break;
                 case LINK_IMMEDIATE:
-                    CHECK_ERROR(schema_display_by_primitive(txObj, &struct_type.fields[i].value.data.immediate));
+                    CHECK_ERROR(schema_display_by_primitive(txObj, &named_field.value.data.immediate));
                     break;
                 default:
                     print_string("schema_display_struct IMPLEMENT ME 1");
                     return parser_unexpected_type;
             }
 
-            if (!struct_type.fields[i].silent || !is_link_skip(&struct_type.fields[i].value)) {
+            if (!named_field.silent || !is_link_skip(&named_field.value)) {
                 char structured_show_as[100] = {0};
                 CHECK_ERROR(find_bracket_content((char *)struct_type.structured_show_as.ptr, i, structured_show_as,
                                                  sizeof(structured_show_as)));
 
-                if (!struct_type.fields[i].is_expert || ui_expert_mode) {
+                if (!named_field.is_expert || ui_expert_mode) {
                     uint16_t len = strlen(structured_show_as);
                     if (len > 0) {
                         CHECK_ERROR(append_item_title(structured_show_as, len));
@@ -326,16 +323,14 @@ parser_error_t schema_display_struct(parser_tx_t *txObj) {
     } else {
         print_string("No show as or structured show as\n");
         for (uint32_t i = 0; i < struct_type.fields_qty; i++) {
-            // TODO: check context_bytes and container_context
+            MEMZERO(&named_field, sizeof(named_field_t));
+            CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
             bool remove_variant = false;
-            if ((!struct_type.fields[i].silent && !is_link_skip(&struct_type.fields[i].value) &&
-                 !struct_type.fields[i].is_expert) ||
-                ui_expert_mode) {
-                CHECK_ERROR(append_item_title((char *)struct_type.fields[i].display_name.ptr,
-                                              struct_type.fields[i].display_name.len));
+            if ((!named_field.silent && !is_link_skip(&named_field.value) && !named_field.is_expert) || ui_expert_mode) {
+                CHECK_ERROR(append_item_title((char *)named_field.display_name.ptr, named_field.display_name.len));
                 remove_variant = true;
             }
-            CHECK_ERROR(schema_display_generic_by_index(txObj, struct_type.fields[i].value.data.by_index));
+            CHECK_ERROR(schema_display_generic_by_index(txObj, named_field.value.data.by_index));
             if (remove_variant) {
                 if (!is_item_data_empty()) {
                     CHECK_ERROR(push_item(txObj));
@@ -592,11 +587,14 @@ parser_error_t schema_create_device_items(parser_tx_t *txObj) {
 
     uint8_t title_qty = 2;
 
+    print_string("schema_create_device_items: ");
     print_u32("schema_create_device_items: ", txObj->ui_items.qty);
     for (uint32_t i = 0; i < txObj->ui_items.qty; i++) {
         print_string(txObj->ui_items.items[i].title);
         print_string(txObj->ui_items.items[i].data);
+    }
 
+    for (uint32_t i = 0; i < txObj->ui_items.qty; i++) {
         if (txObj->device_items.qty > MAX_ITEMS - 1) {
             return parser_too_many_items;
         }
@@ -654,12 +652,6 @@ parser_error_t schema_display(parser_tx_t *txObj, uint32_t start_index) {
     init_item_data_buffer();
 
     CHECK_ERROR(schema_display_generic_by_index(txObj, start_index));
-
-    print_u32("FINISHED item qty: ", txObj->ui_items.qty);
-    for (uint32_t i = 0; i < txObj->ui_items.qty; i++) {
-        print_string(txObj->ui_items.items[i].title);
-        print_string(txObj->ui_items.items[i].data);
-    }
 
     // check input offset
     if (txObj->unsigned_transaction_raw.offset != txObj->unsigned_transaction_raw.buffer.len) {
