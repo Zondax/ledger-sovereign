@@ -228,41 +228,36 @@ parser_error_t schema_display_enum(parser_tx_t *txObj) {
     CHECK_ERROR(read_enum(&txObj->merkle_proofs.leaves.data, &enum_type));
     CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
 
-    uint32_t field_index[MAX_FIELDS_QTY] = {0};
-    uint16_t index_qty = 0;
-    uint32_t max_indexes = MAX_FIELDS_QTY;
-    CHECK_ERROR(get_variant_link_index(enum_type.variants, enum_type.variants_qty, field_index, &index_qty, max_indexes));
-
-    if (index_qty == 0) {
-        return parser_scheme_variant_index_not_found;
-    }
-
     uint8_t discriminant = 0;
     CHECK_ERROR(read_u8(&txObj->unsigned_transaction_raw, &discriminant));
 
-    if (discriminant >= index_qty) {
+    if (discriminant >= enum_type.variants_qty) {
         return parser_scheme_discriminant_overflow;
     }
 
-    if (enum_type.variants[discriminant].has_value && enum_type.variants[discriminant].value.tag == LINK_BY_INDEX) {
+    enum_variant_t variant = {0};
+    for (uint32_t i = 0; i <= discriminant; i++) {
+        MEMZERO(&variant, sizeof(enum_variant_t));
+        CHECK_ERROR(read_enum_variant(&enum_type.enum_variants, &variant));
+    }
+
+    if (variant.has_value && variant.value.tag == LINK_BY_INDEX) {
         bool remove_variant = false;
-        if (enum_type.variants[discriminant].hide_tag || enum_type.hide_tag) {
+        if (variant.hide_tag || enum_type.hide_tag) {
             print_string("Variant hide tag TRUE\n");
-            print_u64("Variant index: ", enum_type.variants[discriminant].value.data.by_index);
+            print_u64("Variant index: ", variant.value.data.by_index);
         } else {
             print_string("Variant hide tag FALSE\n");
-            print_buffer_str(&enum_type.variants[discriminant].name, "Variant name");
-            CHECK_ERROR(append_item_title((char *)enum_type.variants[discriminant].name.ptr,
-                                          enum_type.variants[discriminant].name.len));
+            print_buffer_str(&variant.name, "Variant name");
+            CHECK_ERROR(append_item_title((char *)variant.name.ptr, variant.name.len));
             remove_variant = true;
         }
-        CHECK_ERROR(schema_display_generic_by_index(txObj, enum_type.variants[discriminant].value.data.by_index));
+        CHECK_ERROR(schema_display_generic_by_index(txObj, variant.value.data.by_index));
         if (remove_variant) {
             CHECK_ERROR(remove_last_item_title());
         }
     } else {
-        CHECK_ERROR(
-            append_item_data((char *)enum_type.variants[discriminant].name.ptr, enum_type.variants[discriminant].name.len));
+        CHECK_ERROR(append_item_data((char *)variant.name.ptr, variant.name.len));
     }
 
     return parser_ok;

@@ -29,8 +29,6 @@ parser_error_t get_unnamed_link_index(unnamed_field_t *fields, uint32_t fields_q
                                       uint16_t max_indexes);
 parser_error_t get_named_link_index(named_field_t *fields, uint32_t fields_qty, uint32_t field_index[], uint16_t *qty,
                                     uint16_t max_indexes);
-parser_error_t get_variant_link_index(enum_variant_t *variants, uint32_t variants_qty, uint32_t field_index[], uint16_t *qty,
-                                      uint16_t max_indexes);
 parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type);
 bool is_link_skip(link_t *link);
 

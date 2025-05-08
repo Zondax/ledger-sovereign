@@ -24,7 +24,6 @@ extern "C" {
 #include "merkle_txdef.h"
 
 #define MAX_FIELDS_QTY 20
-#define MAX_VARIANTS_QTY 20
 #define MAX_HRP_LEN 83
 
 typedef enum {
@@ -207,7 +206,7 @@ typedef struct {
 typedef struct {
     bytes_t type_name;
     uint32_t variants_qty;
-    enum_variant_t variants[MAX_VARIANTS_QTY];
+    parser_context_t enum_variants;
     bool hide_tag;
     structured_display_overrides_t structured_display_overrides;
 } schema_enum_t;

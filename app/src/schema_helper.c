@@ -17,7 +17,7 @@
 #include "schema_helper.h"
 
 #include "borsh.h"
-
+#include "schema_reader.h"
 /**
  * @brief Find an index in the indices array.
  *
@@ -116,31 +116,6 @@ parser_error_t get_unnamed_link_index(unnamed_field_t *fields, uint32_t fields_q
     }
 
     return (*qty >= max_indexes) ? parser_scheme_unnamed_link_index_overflow : parser_ok;
-}
-
-/**
- * @brief Get the link index of the variants.
- *
- * @param variants The variants.
- * @param variants_qty The number of variants.
- * @param field_index The field index.
- * @param qty The quantity of fields.
- * @param max_indexes The maximum number of fields.
- * @return parser_error_t The error code.
- */
-parser_error_t get_variant_link_index(enum_variant_t *variants, uint32_t variants_qty, uint32_t field_index[], uint16_t *qty,
-                                      uint16_t max_indexes) {
-    CHECK_INPUT(variants);
-    CHECK_INPUT(field_index);
-    CHECK_INPUT(qty);
-
-    for (uint32_t i = 0; i < variants_qty; i++) {
-        if (variants[i].value.tag == LINK_BY_INDEX) {
-            field_index[(*qty)++] = variants[i].value.data.by_index;
-        }
-    }
-
-    return (*qty >= max_indexes) ? parser_scheme_variant_index_overflow : parser_ok;
 }
 
 parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type) {

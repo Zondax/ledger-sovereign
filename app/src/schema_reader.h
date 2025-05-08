@@ -28,7 +28,7 @@ parser_error_t read_tuple(parser_context_t *ctx, schema_tuple_t *schema_tuple);
 parser_error_t read_option(parser_context_t *ctx, schema_option_t *schema_option);
 parser_error_t read_array(parser_context_t *ctx, schema_array_t *schema_array);
 parser_error_t read_link(parser_context_t *ctx, link_t *link);
-
+parser_error_t read_enum_variant(parser_context_t *ctx, enum_variant_t *variant);
 parser_error_t read_name_registry(parser_context_t *ctx, name_registry_t *name_registry);
 parser_error_t read_registry(parser_context_t *ctx, registry_t *registry);
 

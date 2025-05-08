@@ -396,14 +396,14 @@ parser_error_t read_enum(parser_context_t *ctx, schema_enum_t *schema_enum) {
     // read variants_qty
     CHECK_ERROR(read_u32(ctx, &schema_enum->variants_qty));
     print_u32("variants_qty:", schema_enum->variants_qty);
-    if (schema_enum->variants_qty > MAX_VARIANTS_QTY) {
-        return parser_too_many_variants;
-    }
+
+    schema_enum->enum_variants.buffer.ptr = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem = ctx->offset;
     for (uint32_t i = 0; i < schema_enum->variants_qty; i++) {
         enum_variant_t variant = {0};
         CHECK_ERROR(read_enum_variant(ctx, &variant));
-        schema_enum->variants[i] = variant;
     }
+    schema_enum->enum_variants.buffer.len = ctx->offset - offset_mem;
 
     // read hide_tag
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&schema_enum->hide_tag));
