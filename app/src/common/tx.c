@@ -44,8 +44,8 @@ storage_t NV_CONST N_appdata_impl __attribute__((aligned(64)));
 #define N_appdata (*(NV_VOLATILE storage_t *)PIC(&N_appdata_impl))
 #endif
 
-static parser_tx_t tx_obj;
-static parser_context_t ctx_parsed_tx;
+static parser_tx_t tx_obj = {0};
+static parser_context_t ctx_parsed_tx = {0};
 
 void tx_initialize() {
     buffering_init(ram_buffer, sizeof(ram_buffer), (uint8_t *)N_appdata.buffer, sizeof(N_appdata.buffer));

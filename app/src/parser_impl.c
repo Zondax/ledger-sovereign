@@ -21,8 +21,7 @@
 #include "zxerror.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
-    UNUSED(c);
-
+    
     CHECK_ERROR(merkle_proofs_read(c, v));
     CHECK_ERROR(unsigned_transaction_read(c, v));
 

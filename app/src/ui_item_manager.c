@@ -77,7 +77,7 @@ parser_error_t get_item_title(char *item_title, uint16_t item_title_len) {
 parser_error_t create_item_title(uint16_t index_start, uint16_t index_end, char *output, uint16_t output_len) {
     CHECK_INPUT(output);
 
-    MEMZERO(output, sizeof(output));
+    MEMZERO(output, output_len);
     char content[100] = {0};
 
     if (index_start >= index_end) {

@@ -21,8 +21,9 @@ extern "C" {
 
 #include "common_txdef.h"
 
-#define MAX_ITEMS 30
+#define MAX_ITEMS 32
 #define MAX_STRING_LENGTH 100
+#define MAX_TITLE_LENGTH 60
 #define U128_STR_MAX_LEN 40
 #define MAX_SEPARATOR_LENGTH 100
 #define SEPARATOR_TITLE_OPEN "|"
@@ -31,7 +32,7 @@ extern "C" {
 #define SEPARATOR_DATA_CLOSE "}"
 #define SEPARATOR_TITLE_DISPLAY "/"
 #define PAGE_BREAK ">"
-
+#define NAVIGATE_UP "navigating back up"
 // Buffer to store item data for array or vector display
 typedef struct {
     bool initialized;
