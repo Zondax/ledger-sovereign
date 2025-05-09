@@ -136,33 +136,4 @@ describe('Standard', function () {
       await sim.close()
     }
   })
-
-  // TODO: remove this test case
-  test.concurrent.each(models)('blind sign', async function (m) {
-    const sim = new Zemu(m.path)
-    try {
-      await sim.start({ ...defaultOptions, model: m.name })
-      const app = new SovereignApp(sim.getTransport())
-
-      const txBlob = Buffer.from(txBlobExample, 'hex')
-      const responseAddr = await app.getAddressAndPubKey(PATH, false)
-      const pubKey = responseAddr.pubkey
-
-      // do not wait here.. we need to navigate
-      const signatureRequest = app.sign(PATH, txBlob)
-
-      // Wait until we are not in the main menu
-      await sim.waitUntilScreenIsNot(sim.getMainMenuSnapshot())
-      await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-blind_sign`)
-
-      const signatureResponse = await signatureRequest
-      console.log('Signature:', signatureResponse.signature.toString('hex'))
-
-      // Now verify the signature
-      const valid = ed25519.verify(signatureResponse.signature, txBlob, pubKey)
-      expect(valid).toEqual(true)
-    } finally {
-      await sim.close()
-    }
-  })
 })

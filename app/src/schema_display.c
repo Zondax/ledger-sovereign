@@ -726,21 +726,23 @@ parser_error_t schema_create_device_items_2(parser_tx_t *txObj) {
         print_u8("items_qty: ", items_qty);
         char content_title[100] = {0};
         char content_title_2[100] = {0};
-        char* path_str = "\n[";
+        char *path_str = "\n[";
         if (items_qty > 1) {
             MEMZERO(content_title_2, sizeof(content_title_2));
             strncat(content_title_2, path_str, strlen(path_str));
-            CHECK_ERROR(create_item_title(items_qty-1, items_qty, content_title, sizeof(content_title)));
-            CHECK_ERROR(create_item_title(0, items_qty - 1, content_title_2 + strlen(path_str), sizeof(content_title_2) - strlen(path_str)));
+            CHECK_ERROR(create_item_title(items_qty - 1, items_qty, content_title, sizeof(content_title)));
+            CHECK_ERROR(create_item_title(0, items_qty - 1, content_title_2 + strlen(path_str),
+                                          sizeof(content_title_2) - strlen(path_str)));
             if (strlen(content_title) <= 1) {
                 MEMZERO(content_title, sizeof(content_title));
                 CHECK_ERROR(create_item_title(items_qty - 2, items_qty, content_title, sizeof(content_title)));
                 strncat(content_title_2, path_str, strlen(path_str));
-                CHECK_ERROR(create_item_title(0, items_qty - 2, content_title_2 + strlen(path_str), sizeof(content_title_2) - strlen(path_str)));
+                CHECK_ERROR(create_item_title(0, items_qty - 2, content_title_2 + strlen(path_str),
+                                              sizeof(content_title_2) - strlen(path_str)));
             }
             strncat(content_title_2, "]", 1);
         } else {
-            CHECK_ERROR(create_item_title(items_qty-1, items_qty, content_title, sizeof(content_title)));
+            CHECK_ERROR(create_item_title(items_qty - 1, items_qty, content_title, sizeof(content_title)));
             MEMZERO(content_title_2, sizeof(content_title_2));
         }
 
@@ -802,11 +804,7 @@ parser_error_t test_schema_create_device_items() {
     // MEMCPY(txObj.ui_items.items[qty].data, data6, strlen(data6));
     // qty++;
 
-
-
     ////////////////////////////////////////////////////////////////
-
-
 
     // char *title1 = "|RegisterPaymaster|policy|default_payee_policy|Allow|max_fee|";
     // char *data1 = "10000";
@@ -870,7 +868,6 @@ parser_error_t test_schema_create_device_items() {
 
     ////////////////////////////////////////////////////////////////
 
-
     uint8_t qty = 0;
     char *title1 = "|deep1|deep2|deep3|deep4|deep5|deep6|value7|";
     char *data1 = "10000";
@@ -895,7 +892,6 @@ parser_error_t test_schema_create_device_items() {
     MEMCPY(txObj.ui_items.items[qty].title, title5, strlen(title5));
     MEMCPY(txObj.ui_items.items[qty].data, data5, strlen(data5));
     qty++;
-
 
     char *title6 = "|deep1|deep2|value3|";
     char *data6 = "60000";
