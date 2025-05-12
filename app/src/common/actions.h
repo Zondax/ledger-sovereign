@@ -19,13 +19,12 @@
 #include <stdint.h>
 
 #include "apdu_codes.h"
+#include "borsh.h"
 #include "coin.h"
+#include "common_txdef.h"
 #include "crypto.h"
 #include "tx.h"
 #include "zxerror.h"
-
-#include "common_txdef.h"
-#include "borsh.h"
 
 extern uint16_t action_addrResponseLen;
 

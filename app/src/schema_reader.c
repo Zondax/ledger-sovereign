@@ -20,6 +20,7 @@
 #include "crypto_helper.h"
 #include "schema_helper.h"
 #include "schema_proof.h"
+#include "stack_manager.h"
 
 parser_error_t read_fixed_point_display(parser_context_t *ctx, fixed_point_display_t *display) {
     CHECK_INPUT(display);
@@ -859,7 +860,7 @@ parser_error_t compute_chain_hash(parser_tx_t *txObj) {
 }
 
 // | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash)  | borsh(chain_hash)
-parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
+parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
 
@@ -877,6 +878,7 @@ parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
         print_u8("schema.type:", schema_type);
         CHECK_ERROR(read_schema_type(ctx, schema_type));
     }
+
     txObj->merkle_proofs.leaves.data.buffer.ptr = ptr_mem;
     txObj->merkle_proofs.leaves.data.buffer.len = ctx->offset - offset_mem;
     print_buffer(&txObj->merkle_proofs.leaves.data.buffer, "leaves data");

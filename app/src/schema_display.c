@@ -58,7 +58,9 @@ parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *in
     return parser_name_registry_not_found;
 }
 
-parser_error_t render_fixed_point(parser_tx_t *txObj, fixed_point_display_t display, uint128_t value) {
+parser_error_t render_fixed_point(parser_context_t *ctx, parser_tx_t *txObj, fixed_point_display_t display,
+                                  uint128_t value) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("render_fixed_point");
 
@@ -71,12 +73,10 @@ parser_error_t render_fixed_point(parser_tx_t *txObj, fixed_point_display_t disp
             print_u64("Value: ", display.from_sibling_field.field_index);
             print_u64("Byte offset: ", display.from_sibling_field.byte_offset);
             // get offset
-            if (txObj->unsigned_transaction_raw.offset + display.from_sibling_field.byte_offset >=
-                txObj->unsigned_transaction_raw.buffer.len) {
+            if (ctx->offset + display.from_sibling_field.byte_offset >= ctx->buffer.len) {
                 return parser_unexpected_buffer_end;
             }
-            uint8_t offset = txObj->unsigned_transaction_raw.buffer
-                                 .ptr[txObj->unsigned_transaction_raw.offset + display.from_sibling_field.byte_offset];
+            uint8_t offset = ctx->buffer.ptr[ctx->offset + display.from_sibling_field.byte_offset];
             print_u8("Offset: ", offset);
 
             MEMZERO(item_data, sizeof(item_data));
@@ -89,7 +89,9 @@ parser_error_t render_fixed_point(parser_tx_t *txObj, fixed_point_display_t disp
     }
 }
 
-parser_error_t render_primitive_integer(parser_tx_t *txObj, integer_display_t display, uint128_t value) {
+parser_error_t render_primitive_integer(parser_context_t *ctx, parser_tx_t *txObj, integer_display_t display,
+                                        uint128_t value) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("render_primitive_integer");
 
@@ -104,7 +106,7 @@ parser_error_t render_primitive_integer(parser_tx_t *txObj, integer_display_t di
             append_item_data(item_data, strlen(item_data));
             break;
         case INTEGER_DISPLAY_FIXED_POINT:
-            CHECK_ERROR(render_fixed_point(txObj, display.fixed_point, value));
+            CHECK_ERROR(render_fixed_point(ctx, txObj, display.fixed_point, value));
             break;
         default:
             return parser_unexpected_type;
@@ -113,7 +115,8 @@ parser_error_t render_primitive_integer(parser_tx_t *txObj, integer_display_t di
     return parser_ok;
 }
 
-parser_error_t schema_display_integer(parser_tx_t *txObj, primitive_integer_t *primitive) {
+parser_error_t schema_display_integer(parser_context_t *ctx, parser_tx_t *txObj, primitive_integer_t *primitive) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     CHECK_INPUT(primitive);
     print_string("Displaying integer");
@@ -123,35 +126,35 @@ parser_error_t schema_display_integer(parser_tx_t *txObj, primitive_integer_t *p
         case INTEGER_I8:
         case INTEGER_U8: {
             uint8_t *ptr = (uint8_t *)&value;
-            CHECK_ERROR(read_u8(&txObj->unsigned_transaction_raw, ptr));
+            CHECK_ERROR(read_u8(ctx, ptr));
             print_u8("Value: ", *ptr);
             break;
         }
         case INTEGER_I16:
         case INTEGER_U16: {
             uint16_t *ptr = (uint16_t *)&value;
-            CHECK_ERROR(read_u16(&txObj->unsigned_transaction_raw, ptr));
+            CHECK_ERROR(read_u16(ctx, ptr));
             print_u16("Value: ", *ptr);
             break;
         }
         case INTEGER_I32:
         case INTEGER_U32: {
             uint32_t *ptr = (uint32_t *)&value;
-            CHECK_ERROR(read_u32(&txObj->unsigned_transaction_raw, ptr));
+            CHECK_ERROR(read_u32(ctx, ptr));
             print_u32("Value: ", *ptr);
             break;
         }
         case INTEGER_I64:
         case INTEGER_U64: {
-            CHECK_ERROR(read_u64(&txObj->unsigned_transaction_raw, &value.lo));
+            CHECK_ERROR(read_u64(ctx, &value.lo));
             print_u64("Value: ", value.lo);
             break;
         }
         case INTEGER_I128:
         case INTEGER_U128: {
-            CHECK_ERROR(read_u64(&txObj->unsigned_transaction_raw, &value.lo));
+            CHECK_ERROR(read_u64(ctx, &value.lo));
             print_u64("Value: ", value.lo);
-            CHECK_ERROR(read_u64(&txObj->unsigned_transaction_raw, &value.hi));
+            CHECK_ERROR(read_u64(ctx, &value.hi));
             print_u64("Value: ", value.hi);
             break;
         }
@@ -159,20 +162,21 @@ parser_error_t schema_display_integer(parser_tx_t *txObj, primitive_integer_t *p
             return parser_unexpected_type;
     }
 
-    CHECK_ERROR(render_primitive_integer(txObj, primitive->display, value));
+    CHECK_ERROR(render_primitive_integer(ctx, txObj, primitive->display, value));
 
     return parser_ok;
 }
 
-parser_error_t schema_display_byte_array(parser_tx_t *txObj, primitive_byte_array_t *byte_array) {
+parser_error_t schema_display_byte_array(parser_context_t *ctx, parser_tx_t *txObj, primitive_byte_array_t *byte_array) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     CHECK_INPUT(byte_array);
     print_string("Displaying byte array\n");
 
     bytes_t array = {0};
     array.len = byte_array->len;
-    array.ptr = txObj->unsigned_transaction_raw.buffer.ptr + txObj->unsigned_transaction_raw.offset;
-    CTX_CHECK_AND_ADVANCE(&txObj->unsigned_transaction_raw, byte_array->len)
+    array.ptr = ctx->buffer.ptr + ctx->offset;
+    CTX_CHECK_AND_ADVANCE(ctx, byte_array->len)
     print_buffer_str(&array, "Array");
     print_buffer(&array, "Array");
 
@@ -220,7 +224,8 @@ parser_error_t schema_display_byte_array(parser_tx_t *txObj, primitive_byte_arra
     return parser_ok;
 }
 
-parser_error_t schema_display_enum(parser_tx_t *txObj) {
+parser_error_t schema_display_enum(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("Displaying enum\n");
 
@@ -229,7 +234,7 @@ parser_error_t schema_display_enum(parser_tx_t *txObj) {
     CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
 
     uint8_t discriminant = 0;
-    CHECK_ERROR(read_u8(&txObj->unsigned_transaction_raw, &discriminant));
+    CHECK_ERROR(read_u8(ctx, &discriminant));
 
     if (discriminant >= enum_type.variants_qty) {
         return parser_scheme_discriminant_overflow;
@@ -252,7 +257,7 @@ parser_error_t schema_display_enum(parser_tx_t *txObj) {
             CHECK_ERROR(append_item_title((char *)variant.name.ptr, variant.name.len));
             remove_variant = true;
         }
-        CHECK_ERROR(schema_display_generic_by_index(txObj, variant.value.data.by_index));
+        CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, variant.value.data.by_index));
         if (remove_variant) {
             CHECK_ERROR(remove_last_item_title());
         }
@@ -263,7 +268,7 @@ parser_error_t schema_display_enum(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-parser_error_t schema_display_struct(parser_tx_t *txObj) {
+parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(txObj);
     print_string("Displaying struct\n");
 
@@ -291,10 +296,10 @@ parser_error_t schema_display_struct(parser_tx_t *txObj) {
             CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
             switch (named_field.value.tag) {
                 case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(txObj, named_field.value.data.by_index));
+                    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, named_field.value.data.by_index));
                     break;
                 case LINK_IMMEDIATE:
-                    CHECK_ERROR(schema_display_by_primitive(txObj, &named_field.value.data.immediate));
+                    CHECK_ERROR(schema_display_by_primitive(ctx, txObj, &named_field.value.data.immediate));
                     break;
                 default:
                     print_string("schema_display_struct IMPLEMENT ME 1");
@@ -330,7 +335,7 @@ parser_error_t schema_display_struct(parser_tx_t *txObj) {
                 CHECK_ERROR(append_item_title((char *)named_field.display_name.ptr, named_field.display_name.len));
                 remove_variant = true;
             }
-            CHECK_ERROR(schema_display_generic_by_index(txObj, named_field.value.data.by_index));
+            CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, named_field.value.data.by_index));
             if (remove_variant) {
                 if (!is_item_data_empty()) {
                     CHECK_ERROR(push_item(txObj));
@@ -343,7 +348,8 @@ parser_error_t schema_display_struct(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-parser_error_t schema_display_tuple(parser_tx_t *txObj) {
+parser_error_t schema_display_tuple(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("Displaying tuple\n");
 
@@ -369,7 +375,7 @@ parser_error_t schema_display_tuple(parser_tx_t *txObj) {
             CHECK_ERROR(read_unnamed_field(&tuple_type.unnamed_fields, &unnamed_field));
             switch (unnamed_field.value.tag) {
                 case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(txObj, unnamed_field.value.data.by_index));
+                    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, unnamed_field.value.data.by_index));
                     break;
                 default:
                     print_string("Tuple field is not a link by index\n");
@@ -382,10 +388,10 @@ parser_error_t schema_display_tuple(parser_tx_t *txObj) {
             CHECK_ERROR(read_unnamed_field(&tuple_type.unnamed_fields, &unnamed_field));
             switch (unnamed_field.value.tag) {
                 case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(txObj, unnamed_field.value.data.by_index));
+                    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, unnamed_field.value.data.by_index));
                     break;
                 case LINK_IMMEDIATE:
-                    CHECK_ERROR(schema_display_by_primitive(txObj, &unnamed_field.value.data.immediate));
+                    CHECK_ERROR(schema_display_by_primitive(ctx, txObj, &unnamed_field.value.data.immediate));
                     break;
                 default:
                     print_string("Tuple field is not a link by index\n");
@@ -410,12 +416,13 @@ parser_error_t schema_display_tuple(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-parser_error_t schema_display_option(parser_tx_t *txObj) {
+parser_error_t schema_display_option(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("Displaying option\n");
 
     uint8_t discriminant = 0;
-    CHECK_ERROR(read_u8(&txObj->unsigned_transaction_raw, &discriminant));
+    CHECK_ERROR(read_u8(ctx, &discriminant));
     if (discriminant == 0) {
         print_string("Option is empty\n");
         CHECK_ERROR(append_item_data(NONE_STRING, strlen(NONE_STRING)));
@@ -429,10 +436,10 @@ parser_error_t schema_display_option(parser_tx_t *txObj) {
 
     switch (option_type.value.tag) {
         case LINK_BY_INDEX:
-            CHECK_ERROR(schema_display_generic_by_index(txObj, option_type.value.data.by_index));
+            CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, option_type.value.data.by_index));
             break;
         case LINK_IMMEDIATE:
-            CHECK_ERROR(schema_display_by_primitive(txObj, &option_type.value.data.immediate));
+            CHECK_ERROR(schema_display_by_primitive(ctx, txObj, &option_type.value.data.immediate));
             break;
         default:
             print_string("Option field is not a link by index\n");
@@ -441,7 +448,8 @@ parser_error_t schema_display_option(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-parser_error_t schema_display_array(parser_tx_t *txObj) {
+parser_error_t schema_display_array(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("Displaying array\n");
 
@@ -452,10 +460,10 @@ parser_error_t schema_display_array(parser_tx_t *txObj) {
     for (uint32_t i = 0; i < array_type.len; i++) {
         switch (array_type.value.tag) {
             case LINK_BY_INDEX:
-                CHECK_ERROR(schema_display_generic_by_index(txObj, array_type.value.data.by_index));
+                CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, array_type.value.data.by_index));
                 break;
             case LINK_IMMEDIATE:
-                CHECK_ERROR(schema_display_by_primitive(txObj, &array_type.value.data.immediate));
+                CHECK_ERROR(schema_display_by_primitive(ctx, txObj, &array_type.value.data.immediate));
                 break;
             default:
                 print_string("Array field is not a link by index\n");
@@ -465,12 +473,13 @@ parser_error_t schema_display_array(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-parser_error_t schema_display_vec(parser_tx_t *txObj) {
+parser_error_t schema_display_vec(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("Displaying vec\n");
 
     uint32_t vec_len = 0;
-    CHECK_ERROR(read_u32(&txObj->unsigned_transaction_raw, &vec_len));
+    CHECK_ERROR(read_u32(ctx, &vec_len));
     print_u32("Vec length: ", vec_len);
 
     schema_vec_t vec_type = {0};
@@ -481,10 +490,10 @@ parser_error_t schema_display_vec(parser_tx_t *txObj) {
         CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
         switch (vec_type.value.tag) {
             case LINK_BY_INDEX:
-                CHECK_ERROR(schema_display_generic_by_index(txObj, vec_type.value.data.by_index));
+                CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, vec_type.value.data.by_index));
                 break;
             case LINK_IMMEDIATE:
-                CHECK_ERROR(schema_display_by_primitive(txObj, &vec_type.value.data.immediate));
+                CHECK_ERROR(schema_display_by_primitive(ctx, txObj, &vec_type.value.data.immediate));
                 break;
             default:
                 print_string("Vec field is not a link by index\n");
@@ -494,17 +503,18 @@ parser_error_t schema_display_vec(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-parser_error_t schema_display_by_primitive(parser_tx_t *txObj, primitive_t *primitive) {
+parser_error_t schema_display_by_primitive(parser_context_t *ctx, parser_tx_t *txObj, primitive_t *primitive) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
 
     print_string("Displaying generic by primitive\n");
 
     switch (primitive->type) {
         case PRIMITIVE_INTEGER:
-            CHECK_ERROR(schema_display_integer(txObj, &primitive->integer));
+            CHECK_ERROR(schema_display_integer(ctx, txObj, &primitive->integer));
             break;
         case PRIMITIVE_BYTE_ARRAY:
-            CHECK_ERROR(schema_display_byte_array(txObj, &primitive->byte_array));
+            CHECK_ERROR(schema_display_byte_array(ctx, txObj, &primitive->byte_array));
             break;
         case PRIMITIVE_BYTE_VEC:
             // TODO: Implement me
@@ -535,7 +545,8 @@ parser_error_t schema_display_by_primitive(parser_tx_t *txObj, primitive_t *prim
     return parser_ok;
 }
 
-parser_error_t schema_display_generic_by_index(parser_tx_t *txObj, uint32_t index) {
+parser_error_t schema_display_generic_by_index(parser_context_t *ctx, parser_tx_t *txObj, uint32_t index) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     print_string("Displaying generic by link\n");
 
@@ -554,22 +565,22 @@ parser_error_t schema_display_generic_by_index(parser_tx_t *txObj, uint32_t inde
 
     switch (type) {
         case LINKING_SCHEME_ENUM:
-            CHECK_ERROR(schema_display_enum(txObj));
+            CHECK_ERROR(schema_display_enum(ctx, txObj));
             break;
         case LINKING_SCHEME_STRUCT:
-            CHECK_ERROR(schema_display_struct(txObj));
+            CHECK_ERROR(schema_display_struct(ctx, txObj));
             break;
         case LINKING_SCHEME_TUPLE:
-            CHECK_ERROR(schema_display_tuple(txObj));
+            CHECK_ERROR(schema_display_tuple(ctx, txObj));
             break;
         case LINKING_SCHEME_OPTION:
-            CHECK_ERROR(schema_display_option(txObj));
+            CHECK_ERROR(schema_display_option(ctx, txObj));
             break;
         case LINKING_SCHEME_ARRAY:
-            CHECK_ERROR(schema_display_array(txObj));
+            CHECK_ERROR(schema_display_array(ctx, txObj));
             break;
         case LINKING_SCHEME_VEC:
-            CHECK_ERROR(schema_display_vec(txObj));
+            CHECK_ERROR(schema_display_vec(ctx, txObj));
             break;
         default:
             print_u8("Unknown type: ", type);
@@ -904,23 +915,31 @@ parser_error_t test_schema_create_device_items() {
     return parser_ok;
 }
 
-parser_error_t schema_display(parser_tx_t *txObj, uint32_t start_index) {
+parser_error_t schema_parser_transaction(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     ui_expert_mode = app_mode_expert();
 
     init_item_title_buffer(NULL);
     init_item_data_buffer();
 
-    CHECK_ERROR(schema_display_generic_by_index(txObj, start_index));
+    print_string("schema_display");
 
-    // check input offset
-    if (txObj->unsigned_transaction_raw.offset != txObj->unsigned_transaction_raw.buffer.len) {
-        print_string("Input offset is not the same as buffer length\n");
-        return parser_unexpected_type;
-    }
+    txObj->unsigned_transaction_raw.buffer.ptr = ctx->buffer.ptr + ctx->offset;
+    uint16_t offset_mem_txn = ctx->offset;
+
+    uint64_t root_index = 0;
+    CHECK_ERROR(schema_get_unsigned_transaction_index(txObj, &root_index));
+    print_u64("root_index:", root_index);
+
+    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, root_index));
+
+    txObj->unsigned_transaction_raw.buffer.len = ctx->offset - offset_mem_txn;
 
     CHECK_ERROR(schema_create_device_items(txObj));
     // CHECK_ERROR(test_schema_create_device_items());
+
+    print_buffer(&txObj->unsigned_transaction_raw.buffer, "txObj->unsigned_transaction_raw");
 
     return parser_ok;
 }

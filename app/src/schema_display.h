@@ -22,9 +22,9 @@ extern "C" {
 
 #include "parser_common.h"
 
-parser_error_t schema_display_generic_by_index(parser_tx_t *txObj, uint32_t start_index);
-parser_error_t schema_display_by_primitive(parser_tx_t *txObj, primitive_t *primitive);
-parser_error_t schema_display(parser_tx_t *txObj, uint32_t start_index);
+parser_error_t schema_display_generic_by_index(parser_context_t *ctx, parser_tx_t *txObj, uint32_t start_index);
+parser_error_t schema_display_by_primitive(parser_context_t *ctx, parser_tx_t *txObj, primitive_t *primitive);
+parser_error_t schema_parser_transaction(parser_context_t *ctx, parser_tx_t *txObj);
 
 #ifdef __cplusplus
 }

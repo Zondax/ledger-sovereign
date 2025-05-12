@@ -25,58 +25,19 @@
 extern "C" {
 #endif
 
-#if defined(LEDGER_SPECIFIC)
-#define STACK_SHIFT 0x20
-#define MINIMUM_STACK 0x400
-#else
-static int16_t recursionDepthCounter = 0;
-#define MAX_RECURSION_DEPTH 50
-#endif
-
 /**
  * @brief Checks the available stack space to prevent stack overflow.
  *
  * @return parser_error_t Returns parser_running_out_of_stack if stack space is insufficient, otherwise parser_ok.
  */
-parser_error_t checkStack() {
-#if defined(LEDGER_SPECIFIC)
-    // NOLINTNEXTLINE(readability-identifier-length): here `p` is fine
-    void *p = NULL;
-    const uint32_t availableStack = (uint32_t)((void *)&p) + STACK_SHIFT - (uint32_t)&app_stack_canary;
-    ZEMU_LOGF(50, "Check: available stack: %d\n", availableStack)
-    if (availableStack <= MINIMUM_STACK) {
-        return parser_running_out_of_stack;
-    }
-#else
-    if (recursionDepthCounter >= MAX_RECURSION_DEPTH) {
-        return parser_running_out_of_stack;
-    }
-    recursionDepthCounter++;
-#endif
-    return parser_ok;
-}
+parser_error_t checkStack();
 
 /**
  * @brief Frees the stack space by decrementing the recursion depth counter.
  *
  * @return parser_error_t Always returns parser_ok.
  */
-parser_error_t freeStack(uint8_t depth) {
-#if !defined(LEDGER_SPECIFIC)
-    if (recursionDepthCounter > 0) {
-        recursionDepthCounter -= depth;
-    }
-#else
-    (void)depth;
-    void *p = NULL;
-    const uint32_t availableStack = (uint32_t)((void *)&p) - (uint32_t)&app_stack_canary;
-    ZEMU_LOGF(50, "Free: available stack: %d\n", availableStack)
-    if (availableStack <= MINIMUM_STACK) {
-        return parser_running_out_of_stack;
-    }
-#endif
-    return parser_ok;
-}
+parser_error_t freeStack(uint8_t depth);
 
 #ifdef __cplusplus
 }

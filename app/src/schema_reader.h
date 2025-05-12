@@ -33,9 +33,10 @@ parser_error_t read_name_registry(parser_context_t *ctx, name_registry_t *name_r
 parser_error_t read_named_field(parser_context_t *ctx, named_field_t *field);
 parser_error_t read_unnamed_field(parser_context_t *ctx, unnamed_field_t *field);
 parser_error_t read_registry(parser_context_t *ctx, registry_t *registry);
+parser_error_t get_schema_unsigned_transaction_index(parser_tx_t *txObj, uint64_t *root_index);
 
 parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj);
-parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj);
+parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj);
 parser_error_t schema_extra_data_read(parser_context_t *ctx, parser_tx_t *txObj);
 parser_error_t schema_chain_hash_read(parser_context_t *ctx, parser_tx_t *txObj);
 

@@ -48,7 +48,6 @@ typedef struct {
 typedef struct {
     schema_t schema;
     merkle_proof_t merkle_proofs;
-    unsigned_transaction_t unsigned_transaction;
     parser_context_t unsigned_transaction_raw;
     ui_items_t ui_items;
     ui_items_t device_items;

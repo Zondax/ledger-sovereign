@@ -74,52 +74,18 @@ parser_error_t read_tx_details(parser_context_t *ctx, tx_details_t *tx_details) 
     return parser_ok;
 }
 
-parser_error_t get_schema_unsigned_transaction_index(parser_tx_t *txObj, uint64_t *root_index) {
-    CHECK_INPUT(txObj);
-
-    // Get root index
-    if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_UNSIGNED_TRANSACTION) {
-        return parser_root_type_indices_overflow;
-    }
-
-    txObj->schema.root_type_indices.indices.offset = OFFSET_U64 * ROLLUP_ROOTS_UNSIGNED_TRANSACTION;
-    CHECK_ERROR(read_u64(&txObj->schema.root_type_indices.indices, root_index));
-    txObj->schema.root_type_indices.indices.offset = 0;
-
-    return parser_ok;
-}
-
 parser_error_t unsigned_transaction_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
 
-    const uint8_t *ptr_mem_txn = ctx->buffer.ptr + ctx->offset;
-    uint16_t offset_mem_txn = ctx->offset;
+    // // read runtime
+    // CHECK_ERROR(read_runtime(ctx, &txObj->unsigned_transaction.runtime_call));
+    // // read generation
+    // CHECK_ERROR(read_u64(ctx, &txObj->unsigned_transaction.generation));
+    // print_u64_hex("generation:", txObj->unsigned_transaction.generation);
 
-    // read runtime
-    CHECK_ERROR(read_runtime(ctx, &txObj->unsigned_transaction.runtime_call));
-    // read generation
-    CHECK_ERROR(read_u64(ctx, &txObj->unsigned_transaction.generation));
-    print_u64_hex("generation:", txObj->unsigned_transaction.generation);
-
-    // read tx details
-    CHECK_ERROR(read_tx_details(ctx, &txObj->unsigned_transaction.tx_details));
-
-    uint64_t root_index;
-    CHECK_ERROR(get_schema_unsigned_transaction_index(txObj, &root_index));
-    print_u64("root_index:", root_index);
-
-    txObj->unsigned_transaction_raw.buffer.ptr = ptr_mem_txn;
-    txObj->unsigned_transaction_raw.buffer.len = ctx->offset - offset_mem_txn;
-    txObj->unsigned_transaction_raw.offset = 0;
-
-
-    print_string("txObj->unsigned_transaction_raw.offset: ");
-    print_u16("txObj->unsigned_transaction_raw.len: ", txObj->unsigned_transaction_raw.buffer.len);
-
-    print_buffer(&txObj->unsigned_transaction_raw.buffer, "txObj->unsigned_transaction_raw.buffer: ");
-    
-    CHECK_ERROR(schema_display(txObj, root_index));
+    // // read tx details
+    // CHECK_ERROR(read_tx_details(ctx, &txObj->unsigned_transaction.tx_details));
 
     return parser_ok;
 }

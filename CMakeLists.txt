@@ -150,6 +150,7 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_utils.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_item_manager.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_item_buffer.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/stack_manager.c
         )
 
 add_library(app_lib STATIC ${LIB_SRC})

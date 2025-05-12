@@ -24,7 +24,7 @@
 #include "zxmacros.h"
 
 #if defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX) || defined(TARGET_FLEX)
-#define RAM_BUFFER_SIZE 8192
+#define RAM_BUFFER_SIZE 4096
 #define FLASH_BUFFER_SIZE 16384
 #elif defined(TARGET_NANOS)
 #define RAM_BUFFER_SIZE 256
@@ -116,4 +116,3 @@ zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *ou
 const uint8_t *get_txn_raw() { return tx_obj.unsigned_transaction_raw.buffer.ptr; }
 
 uint16_t get_txn_len() { return tx_obj.unsigned_transaction_raw.buffer.len; }
-

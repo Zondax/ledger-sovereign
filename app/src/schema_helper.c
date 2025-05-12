@@ -101,6 +101,22 @@ parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type
     return parser_ok;
 }
 
+parser_error_t schema_get_unsigned_transaction_index(parser_tx_t *txObj, uint64_t *root_index) {
+    CHECK_INPUT(txObj);
+
+    // Get root index
+    if (txObj->schema.root_type_indices.qty <= ROLLUP_ROOTS_UNSIGNED_TRANSACTION) {
+        return parser_root_type_indices_overflow;
+    }
+
+    for (uint8_t i = 0; i <= (uint16_t)ROLLUP_ROOTS_UNSIGNED_TRANSACTION; i++) {
+        CHECK_ERROR(read_u64(&txObj->schema.root_type_indices.indices, root_index));
+    }
+    txObj->schema.root_type_indices.indices.offset = 0;
+
+    return parser_ok;
+}
+
 bool is_link_skip(link_t *link) {
     if (link->tag == LINK_IMMEDIATE && link->data.immediate.type == PRIMITIVE_SKIP) {
         return true;
