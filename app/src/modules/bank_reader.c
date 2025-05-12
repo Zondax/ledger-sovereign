@@ -63,19 +63,15 @@ parser_error_t read_bank_call_message(parser_context_t *ctx, bank_call_message_t
             print_string("BANK_CALL_MESSAGE_CREATE_TOKEN NOT IMPLEMENTED");
             return parser_unexpected_error;
         case BANK_CALL_MESSAGE_TRANSFER:
-            print_string("CALL_MESSAGE_TRANSFER");
             CHECK_ERROR(read_bank_transfer(ctx, &bank->transfer));
             break;
         case BANK_CALL_MESSAGE_BURN:
-            print_string("BANK_CALL_MESSAGE_BURN");
             CHECK_ERROR(read_bank_burn(ctx, &bank->burn));
             break;
         case BANK_CALL_MESSAGE_MINT:
-            print_string("BANK_CALL_MESSAGE_MINT");
             CHECK_ERROR(read_bank_mint(ctx, &bank->mint));
             break;
         case BANK_CALL_MESSAGE_FREEZE:
-            print_string("BANK_CALL_MESSAGE_FREEZE");
             CHECK_ERROR(read_bank_freeze(ctx, &bank->freeze));
             break;
         default:

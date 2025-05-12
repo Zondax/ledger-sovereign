@@ -137,29 +137,11 @@ static parser_error_t merge_branches(const uint8_t left[CX_SHA256_SIZE], const u
     CHECK_INPUT(right);
     CHECK_INPUT(output);
 
-    // TODO: remove this
-    // bytes_t buffer_left = {0};
-    // buffer_left.ptr = left;
-    // buffer_left.len = CX_SHA256_SIZE;
-    // print_buffer_u8(&buffer_left, "merge left");
-    // print_buffer(&buffer_left, "merge left");
-
-    // bytes_t buffer_right = {0};
-    // buffer_right.ptr = right;
-    // buffer_right.len = CX_SHA256_SIZE;
-    // print_buffer_u8(&buffer_right, "merge right");
-    // print_buffer(&buffer_right, "merge right");
-
     crypto_sha256_init();
     crypto_sha256_update(&INNER_PREFIX, 1);
     crypto_sha256_update(left, CX_SHA256_SIZE);
     crypto_sha256_update(right, CX_SHA256_SIZE);
     crypto_sha256_final(output);
-
-    // bytes_t buffer_output = {0};
-    // buffer_output.ptr = output;
-    // buffer_output.len = CX_SHA256_SIZE;
-    // print_buffer_u8(&buffer_output, "merge output");
 
     return parser_ok;
 }
@@ -286,14 +268,6 @@ parser_error_t get_root_hash(const merkle_proof_t *metadata, uint8_t *hash) {
     proof.lemma_index = metadata->lemmas.entries - 1;
     proof.tree_size = metadata->tree_size;
 
-    print_buffer(&proof.leaves.data.buffer, "leaves data");
-    print_u32("leaves.qty:", proof.leaves.entries);
-    print_buffer(&proof.indices.indices.buffer, "indices");
-    print_u32("indices.qty:", proof.indices.entries);
-    print_buffer(&proof.lemmas.data.buffer, "lemmas");
-    print_u32("lemmas.qty:", proof.lemmas.entries);
-    print_u64("tree_size:", proof.tree_size);
-
     if (proof.tree_size > INT32_MAX) {
         return parser_value_out_of_range;
     }
@@ -318,8 +292,6 @@ parser_error_t verify_merkle_proofs(const merkle_proof_t *metadata) {
     if (MEMCMP(metadata->root_hash.ptr, root_hash, CX_SHA256_SIZE) != 0) {
         return parser_unexpected_root_hash;
     }
-
-    print_string("root_hash matches");
 
     return parser_ok;
 }

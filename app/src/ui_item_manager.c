@@ -112,8 +112,6 @@ parser_error_t append_item_data(const char *input, uint16_t input_len) {
     print_string("Appended variant data\n");
     print_string(item_data_buffer.data);
 
-    print_u32("Item data buffer qty: ", item_data_buffer.qty);
-
     return parser_ok;
 }
 

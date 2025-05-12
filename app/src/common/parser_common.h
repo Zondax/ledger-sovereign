@@ -83,6 +83,7 @@ typedef enum {
     parser_ui_find_bracket_buffer_too_small,
     parser_ui_buffer_not_initialized,
     parser_ui_buffer_init_failed,
+    parser_ui_buffer_too_small,
 } parser_error_t;
 
 #ifdef __cplusplus

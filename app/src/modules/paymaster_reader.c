@@ -21,28 +21,23 @@ parser_error_t read_payee_policy_allow(parser_context_t *ctx, payee_policy_allow
     CHECK_INPUT(allow);
 
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&allow->has_max_fee));
-    print_u8("has max fee:", allow->has_max_fee);
     if (allow->has_max_fee) {
         CHECK_ERROR(read_amount(ctx, &allow->max_fee));
     }
 
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&allow->has_gas_limit));
-    print_u8("has gas limit:", allow->has_gas_limit);
     if (allow->has_gas_limit) {
         CHECK_ERROR(read_gas(ctx, &allow->gas_limit));
     }
 
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&allow->has_max_gas_price));
-    print_u8("has max gas price:", allow->has_max_gas_price);
     if (allow->has_max_gas_price) {
         CHECK_ERROR(read_gas_u128(ctx, &allow->max_gas_price));
     }
 
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&allow->has_transaction_limit));
-    print_u8("has transaction limit:", allow->has_transaction_limit);
     if (allow->has_transaction_limit) {
         CHECK_ERROR(read_u64(ctx, &allow->transaction_limit));
-        print_u64("transaction limit:", allow->transaction_limit);
     }
 
     return parser_ok;
@@ -73,7 +68,6 @@ parser_error_t read_payee_policy_list(parser_context_t *ctx, payee_policy_list_t
     CHECK_INPUT(payees);
 
     CHECK_ERROR(read_u32(ctx, &payees->length));
-    print_u32("payees list length:", payees->length);
     for (int i = 0; i < (int)payees->length; i++) {
         CHECK_ERROR(read_address(ctx, &payees->pairs[i].address));
         CHECK_ERROR(read_payee_policy(ctx, &payees->pairs[i].policy));
@@ -86,7 +80,6 @@ parser_error_t read_authorized_updaters(parser_context_t *ctx, address_list_t *u
     CHECK_INPUT(updaters);
 
     CHECK_ERROR(read_u32(ctx, &updaters->length));
-    print_u32("authorized updaters length:", updaters->length);
     for (int i = 0; i < (int)updaters->length; i++) {
         CHECK_ERROR(read_address(ctx, &updaters->address[i]));
     }
@@ -103,7 +96,6 @@ parser_error_t read_authorized_sequencers(parser_context_t *ctx, authorized_sequ
             print_string("AUTHORIZED_SEQUENCERS_ALL");
             break;
         case AUTHORIZED_SEQUENCERS_SOME:
-            print_string("AUTHORIZED_SEQUENCERS_SOME");
             CHECK_ERROR(read_authorized_updaters(ctx, &sequencers->updaters));
             break;
     }
@@ -139,7 +131,7 @@ parser_error_t read_paymaster_call_message(parser_context_t *ctx, paymaster_call
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&paymaster->type));
     switch (paymaster->type) {
         case PAYMASTER_CALL_REGISTER_PAYMASTER:
-            print_string("PAYMASTER_CALL_REGISTER_PAYMASTER");
+
             CHECK_ERROR(read_paymaster_register_paymaster(ctx, &paymaster->register_paymaster));
             break;
         case PAYMASTER_CALL_SET_PAYER_FOR_SEQUENCER:

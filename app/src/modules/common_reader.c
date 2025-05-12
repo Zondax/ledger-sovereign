@@ -22,11 +22,6 @@ parser_error_t read_amount(parser_context_t *ctx, amount_t *amount) {
 
     CHECK_ERROR(read_u64(ctx, &amount->lo));
     CHECK_ERROR(read_u64(ctx, &amount->hi));
-    print_u64_hex("amount:", amount->lo);
-    print_u64_hex("amount:", amount->hi);
-
-    print_u64("amount:", amount->lo);
-    print_u64("amount:", amount->hi);
 
     return parser_ok;
 }
@@ -39,8 +34,6 @@ parser_error_t read_token_id(parser_context_t *ctx, token_id_t *token_id) {
     token_id->token.ptr = ctx->buffer.ptr + ctx->offset;
     CTX_CHECK_AND_ADVANCE(ctx, TOKEN_ID_SIZE)
 
-    print_buffer(&token_id->token, "token_id");
-
     return parser_ok;
 }
 
@@ -49,13 +42,10 @@ parser_error_t read_address(parser_context_t *ctx, address_t *address) {
     CHECK_INPUT(address);
 
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&address->type));
-    print_u8("address type", address->type);
 
     address->address.len = ADDRESS_SIZE;
     address->address.ptr = ctx->buffer.ptr + ctx->offset;
     CTX_CHECK_AND_ADVANCE(ctx, ADDRESS_SIZE);
-
-    print_buffer(&address->address, "address");
 
     return parser_ok;
 }
@@ -76,8 +66,6 @@ parser_error_t read_gas(parser_context_t *ctx, gas_t *gas) {
 
     for (int i = 0; i < GAS_DIMENSIONS; i++) {
         CHECK_ERROR(read_u64(ctx, &gas->gas[i]));
-        print_u64_hex("gas[%d]:", gas->gas[i]);
-        print_u64("gas[%d]:", gas->gas[i]);
     }
 
     return parser_ok;

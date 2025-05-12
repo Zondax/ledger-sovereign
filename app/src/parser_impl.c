@@ -29,10 +29,7 @@ parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     CHECK_ERROR(schema_chain_hash_read(c, v));
 
     if (c->offset != c->buffer.len) {
-        print_string("Failed to parse unsigned transaction\n");
         return parser_unexpected_error;
-    } else {
-        print_string("Successfully parsed unsigned transaction\n");
     }
 
     return parser_ok;
@@ -131,6 +128,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "buffer not initialized";
         case parser_ui_buffer_init_failed:
             return "buffer init failed";
+        case parser_ui_buffer_too_small:
+            return "buffer too small";
 
         default:
             return "Unrecognized error code";
