@@ -112,3 +112,8 @@ zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *ou
 
     return zxerr_ok;
 }
+
+const uint8_t *get_txn_raw() { return tx_obj.unsigned_transaction_raw.buffer.ptr; }
+
+uint16_t get_txn_len() { return tx_obj.unsigned_transaction_raw.buffer.len; }
+

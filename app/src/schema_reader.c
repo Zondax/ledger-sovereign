@@ -858,8 +858,7 @@ parser_error_t compute_chain_hash(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-// | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash) | borsh(root_indexes) |
-// borsh(chain_data) | borsh(extra_metadata_hash) | borsh(chain_hash)
+// | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash)  | borsh(chain_hash)
 parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
@@ -913,9 +912,19 @@ parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
 
     // read root_hash
     txObj->merkle_proofs.root_hash.ptr = ctx->buffer.ptr + ctx->offset;
-    txObj->merkle_proofs.root_hash.len = 32;
+    txObj->merkle_proofs.root_hash.len = CX_SHA256_SIZE;
     CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proofs.root_hash.len);
     print_buffer(&txObj->merkle_proofs.root_hash, "root_hash");
+
+    CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proofs));
+
+    return parser_ok;
+}
+
+// borsh(root_indexes) | borsh(chain_data) | borsh(extra_metadata_hash)
+parser_error_t schema_extra_data_read(parser_context_t *ctx, parser_tx_t *txObj) {
+    CHECK_INPUT(ctx);
+    CHECK_INPUT(txObj);
 
     // read root_type_indices
     CHECK_ERROR(read_root_type_indices(ctx, &txObj->schema.root_type_indices));
@@ -929,12 +938,14 @@ parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CTX_CHECK_AND_ADVANCE(ctx, CX_SHA256_SIZE);
     print_buffer(&txObj->schema.extra_metadata_hash, "extra_metadata_hash");
 
+    return parser_ok;
+}
+
+parser_error_t schema_chain_hash_read(parser_context_t *ctx, parser_tx_t *txObj) {
     // read chain hash
     txObj->schema.chain_hash.ptr = ctx->buffer.ptr + ctx->offset;
     txObj->schema.chain_hash.len = CX_SHA256_SIZE;
     CTX_CHECK_AND_ADVANCE(ctx, CX_SHA256_SIZE);
-
-    CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proofs));
 
     // compute chain hash
     CHECK_ERROR(compute_chain_hash(txObj));

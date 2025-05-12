@@ -36,6 +36,8 @@ parser_error_t read_registry(parser_context_t *ctx, registry_t *registry);
 
 parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj);
 parser_error_t merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj);
+parser_error_t schema_extra_data_read(parser_context_t *ctx, parser_tx_t *txObj);
+parser_error_t schema_chain_hash_read(parser_context_t *ctx, parser_tx_t *txObj);
 
 #ifdef __cplusplus
 }

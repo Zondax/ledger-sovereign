@@ -19,10 +19,21 @@
 #include "schema_reader.h"
 #include "unsigned_transaction_reader.h"
 #include "zxerror.h"
+#include "borsh.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     CHECK_ERROR(merkle_proofs_read(c, v));
+    CHECK_ERROR(schema_extra_data_read(c, v));
     CHECK_ERROR(unsigned_transaction_read(c, v));
+    CHECK_ERROR(schema_chain_hash_read(c, v));
+
+    // TODO: check that we have consumxed all data
+    if (c->offset != c->buffer.len) {
+        print_string("Failed to parse unsigned transaction\n");
+        return parser_unexpected_error;
+    } else {
+        print_string("Successfully parsed unsigned transaction\n");
+    }
 
     return parser_ok;
 }
