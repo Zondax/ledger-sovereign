@@ -775,7 +775,7 @@ parser_error_t compute_chain_hash(parser_tx_t *txObj) {
     return parser_ok;
 }
 
-// | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash)  | borsh(chain_hash)
+// | borsh(leaves_data) | borsh(indices_leaves) | borsh(lemmas) | borsh(tree_size) | borsh(root_hash)
 parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);

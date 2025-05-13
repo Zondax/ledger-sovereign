@@ -33,7 +33,15 @@ typedef struct {
     uint64_t index;
     std::string name;
     std::string transaction_blob;
-    std::string merkle_proof_blob;
+    std::string leaves_data;
+    std::string leaves_index;
+    std::string lemmas;
+    std::string tree_size;
+    std::string root_hash;
+    std::string root_type_index;
+    std::string chain_data;
+    std::string extra_data_hash;
+    std::string chain_hash;
     std::vector<std::string> expected;
     std::vector<std::string> expected_expert;
 } testcase_t;
@@ -81,9 +89,12 @@ std::vector<testcase_t> GetJsonTestCases(std::string jsonFile) {
             outputs_expert.push_back(s.asString());
         }
 
-        answer.push_back(testcase_t{obj[i]["index"].asUInt64(), obj[i]["name"].asString(),
-                                    obj[i]["transaction_blob"].asString(), obj[i]["merkle_proof_blob"].asString(), outputs,
-                                    outputs_expert});
+        answer.push_back(
+            testcase_t{obj[i]["index"].asUInt64(), obj[i]["name"].asString(), obj[i]["transaction_blob"].asString(),
+                       obj[i]["leaves_data"].asString(), obj[i]["leaves_index"].asString(), obj[i]["lemmas"].asString(),
+                       obj[i]["tree_size"].asString(), obj[i]["root_hash"].asString(), obj[i]["root_type_index"].asString(),
+                       obj[i]["chain_data"].asString(), obj[i]["extra_data_hash"].asString(),
+                       obj[i]["chain_hash"].asString(), outputs, outputs_expert});
     }
 
     return answer;
@@ -95,11 +106,18 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
     parser_context_t ctx;
     parser_error_t err;
 
-    uint8_t buffer[5000];
-    uint16_t bufferLen = parseHexString(buffer, sizeof(buffer), tc.merkle_proof_blob.c_str());
+    uint8_t buffer[12000];
+    uint16_t bufferLen = parseHexString(buffer, sizeof(buffer), tc.leaves_data.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.leaves_index.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.lemmas.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.tree_size.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.root_hash.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.root_type_index.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.chain_data.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.extra_data_hash.c_str());
 
-    uint16_t bufferLen_tx = parseHexString(buffer + bufferLen, sizeof(buffer), tc.transaction_blob.c_str());
-    bufferLen += bufferLen_tx;
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.transaction_blob.c_str());
+    bufferLen += parseHexString(buffer + bufferLen, sizeof(buffer), tc.chain_hash.c_str());
 
     parser_tx_t tx_obj;
     memset(&tx_obj, 0, sizeof(tx_obj));
