@@ -50,7 +50,6 @@ typedef struct {
     merkle_proof_t merkle_proofs;
     parser_context_t unsigned_transaction_raw;
     ui_items_t ui_items;
-    ui_items_t device_items;
 } parser_tx_t;
 
 #ifdef __cplusplus

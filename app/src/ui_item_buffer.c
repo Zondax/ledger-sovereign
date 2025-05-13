@@ -217,6 +217,62 @@ parser_error_t get_item_buffer_content(item_buffer_t *buffer, uint8_t index, cha
     return parser_unexpected_value;
 }
 
+parser_error_t get_item_buffer_content_length(item_buffer_t *buffer, uint8_t index, size_t *length) {
+    CHECK_INPUT(buffer);
+    CHECK_INPUT(length);
+
+    *length = 0;
+
+    const char *current = buffer->data;
+    for (uint8_t i = 0; i <= index; i++) {
+        while (*current && MEMCMP(current, buffer->separator_open, buffer->separator_open_len) != 0) {
+            current++;
+        }
+        if (*current == '\0') return parser_ui_open_bracket_not_found;
+
+        if (i < index) {
+            current++;
+            continue;
+        }
+
+        const char *close = current + 1;
+        while (*close && MEMCMP(close, buffer->separator_close, buffer->separator_close_len) != 0) {
+            close++;
+        }
+        if (*close == '\0') return parser_ui_close_bracket_not_found;
+
+        *length = close - current - buffer->separator_open_len;
+        return parser_ok;
+    }
+
+    return parser_unexpected_value;
+}
+
+parser_error_t get_item_buffer_range_length(item_buffer_t *buffer, uint8_t index_start, uint8_t index_end,
+                                            size_t *total_length) {
+    CHECK_INPUT(buffer);
+    CHECK_INPUT(total_length);
+
+    *total_length = 0;
+    size_t content_length = 0;
+
+    if (index_start >= index_end) {
+        return parser_ui_item_title_empty;
+    }
+
+    for (uint8_t i = index_start; i < index_end; i++) {
+        CHECK_ERROR(get_item_buffer_content_length(buffer, i, &content_length));
+        *total_length += content_length;
+
+        // Add separator length for all items except the last one
+        if (i < index_end - 1) {
+            *total_length += strlen(SEPARATOR_TITLE_DISPLAY);
+        }
+    }
+
+    return parser_ok;
+}
+
 parser_error_t get_item_buffer_range(item_buffer_t *buffer, uint8_t index_start, uint8_t index_end, item_buffer_t *output) {
     CHECK_INPUT(buffer);
     CHECK_INPUT(output);

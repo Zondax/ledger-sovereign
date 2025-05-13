@@ -78,6 +78,8 @@ parser_error_t create_item_title(uint16_t index_start, uint16_t index_end, char 
     CHECK_INPUT(output);
 
     MEMZERO(output, output_len);
+
+    // TODO: remove this
     char content[100] = {0};
 
     if (index_start >= index_end) {
@@ -95,6 +97,11 @@ parser_error_t create_item_title(uint16_t index_start, uint16_t index_end, char 
     print_string("Create item title: ");
     print_string(output);
 
+    return parser_ok;
+}
+
+parser_error_t get_item_title_range_length(uint16_t index_start, uint16_t index_end, size_t *total_length) {
+    CHECK_ERROR(get_item_buffer_range_length(&item_title_buffer, index_start, index_end, total_length));
     return parser_ok;
 }
 

@@ -25,6 +25,7 @@ void clear_item_title_buffer();
 bool is_item_title_empty();
 parser_error_t get_item_title(char *item_title, uint16_t item_title_len);
 parser_error_t create_item_title(uint16_t index_start, uint16_t index_end, char *output, uint16_t output_len);
+parser_error_t get_item_title_range_length(uint16_t index_start, uint16_t index_end, size_t *total_length);
 
 // Item data
 void init_item_data_buffer();

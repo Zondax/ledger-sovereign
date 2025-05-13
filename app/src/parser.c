@@ -21,10 +21,12 @@
 #include <zxmacros.h>
 #include <zxtypes.h>
 
+#include "borsh.h"
 #include "coin.h"
 #include "crypto.h"
 #include "parser_common.h"
 #include "parser_impl.h"
+#include "ui_item_manager.h"
 
 parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize) {
     ctx->offset = 0;
@@ -63,7 +65,7 @@ parser_error_t parser_validate(parser_tx_t *txObj) {
 }
 
 parser_error_t parser_getNumItems(const parser_tx_t *txObj, uint8_t *num_items) {
-    *num_items = txObj->device_items.qty;
+    *num_items = txObj->ui_items.qty;
     if (*num_items == 0) {
         return parser_unexpected_number_items;
     }
@@ -84,6 +86,74 @@ static parser_error_t checkSanity(uint8_t numItems, uint8_t displayIdx) {
     return parser_ok;
 }
 
+parser_error_t page_title(char *outKey, uint16_t outKeyLen, const char *inValue) {
+    CHECK_INPUT(outKey);
+    CHECK_INPUT(inValue);
+
+    if (outKeyLen == 0) {
+        return parser_ui_buffer_too_small;
+    }
+    outKeyLen--;
+
+    MEMZERO(outKey, outKeyLen);
+
+    clear_item_title_buffer();
+    init_item_title_buffer(inValue);
+
+    uint8_t items_qty = 0;
+    CHECK_ERROR(get_title_item_qty(&items_qty))
+
+    if (items_qty == 0) {
+        return parser_ui_item_title_empty;
+    }
+
+    CHECK_ERROR(create_item_title(items_qty - 1, items_qty, outKey, outKeyLen));
+
+    return parser_ok;
+}
+
+parser_error_t page_item(char *outValue, uint16_t outValueLen, const char *title, const char *data, uint8_t pageIdx,
+                         uint8_t *pageCount) {
+    CHECK_INPUT(outValue);
+    CHECK_INPUT(title);
+    CHECK_INPUT(data);
+    CHECK_INPUT(pageCount);
+
+    MEMZERO(outValue, outValueLen);
+    *pageCount = 0;
+
+    if (outValueLen == 0) {
+        return parser_ui_buffer_too_small;
+    }
+    outValueLen--;
+
+    uint16_t dataLen = strlen(data);
+    if (dataLen == 0) {
+        return parser_no_data;
+    }
+
+    clear_item_title_buffer();
+    init_item_title_buffer(title);
+
+    uint8_t items_qty = 0;
+    CHECK_ERROR(get_title_item_qty(&items_qty))
+
+    if (items_qty > 1) {
+        char title_str[200] = {0};
+        CHECK_ERROR(create_item_title(0, items_qty - 1, title_str, sizeof(title_str)));
+        strncat(title_str, ":", 1);
+
+        pageString(outValue, outValueLen, title_str, pageIdx, pageCount);
+    }
+
+    (*pageCount)++;
+    if (pageIdx == *pageCount - 1) {
+        strncat(outValue, data, dataLen);
+    }
+
+    return parser_ok;
+}
+
 parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal,
                               uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     UNUSED(pageIdx);
@@ -95,11 +165,9 @@ parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
-    char bufferUI[200] = {0};
-    snprintf(outKey, outKeyLen, "%s", txObj->device_items.items[displayIdx].title);
-    snprintf(bufferUI, sizeof(bufferUI), "%s", txObj->device_items.items[displayIdx].data);
-
-    pageString(outVal, outValLen, bufferUI, pageIdx, pageCount);
+    CHECK_ERROR(page_title(outKey, outKeyLen, txObj->ui_items.items[displayIdx].title))
+    CHECK_ERROR(page_item(outVal, outValLen, txObj->ui_items.items[displayIdx].title, txObj->ui_items.items[displayIdx].data,
+                          pageIdx, pageCount))
 
     return parser_ok;
 }
