@@ -28,6 +28,8 @@
 
 item_buffer_t item_title_buffer = {0};
 item_buffer_t item_data_buffer = {0};
+primitive_t primitive;
+parser_context_t data_context;
 
 // Item title buffer
 void init_item_title_buffer(const char *initial_data) {
@@ -136,6 +138,18 @@ parser_error_t get_item_data(char *item_data, uint16_t item_data_len) {
     return parser_ok;
 }
 
+parser_error_t set_primitive(primitive_t *value) {
+    CHECK_INPUT(value);
+    primitive = *value;
+    return parser_ok;
+}
+
+parser_error_t set_data_context(parser_context_t *context) {
+    CHECK_INPUT(context);
+    data_context = *context;
+    return parser_ok;
+}
+
 parser_error_t push_item(parser_tx_t *txObj) {
     CHECK_INPUT(txObj);
 
@@ -182,79 +196,6 @@ parser_error_t push_item(parser_tx_t *txObj) {
         print_string(txObj->ui_items.items[i].title);
         print_string(txObj->ui_items.items[i].data);
     }
-
-    return parser_ok;
-}
-
-parser_error_t test_remove_last_item_buffer() {
-    item_buffer_t buffer = {0};
-    item_buffer_t buffer2 = {0};
-    init_item_buffer(&buffer2, NULL, "/", "/");
-
-    char content[100] = {0};
-    init_item_buffer(&buffer, "|hello|world|test|test2|", "|", "|");
-    print_string("Initial buffer");
-    print_string(buffer.data);
-    CHECK_ERROR(get_item_buffer_content(&buffer, 0, content, sizeof(content)));
-    print_string("Content: ");
-    print_string(content);
-    CHECK_ERROR(get_item_buffer_content(&buffer, 1, content, sizeof(content)));
-    print_string("Content: ");
-    print_string(content);
-    CHECK_ERROR(get_item_buffer_content(&buffer, 2, content, sizeof(content)));
-    print_string("Content: ");
-    print_string(content);
-    if (get_item_buffer_content(&buffer, 4, content, sizeof(content)) != parser_ok) {
-        print_string("Error: ");
-        print_string(content);
-    }
-
-    CHECK_ERROR(get_item_buffer_range(&buffer, 0, 1, &buffer2));
-    print_string("Range buffer 0 1");
-    print_string(buffer2.data);
-
-    CHECK_ERROR(get_item_buffer_range(&buffer, 1, 3, &buffer2));
-    print_string("Range buffer 1 3");
-    print_string(buffer2.data);
-
-    if (get_item_buffer_range(&buffer, 0, 0, &buffer2) != parser_ok) {
-        print_string("Error get_item_buffer_range 0 0: ");
-    }
-    print_string("Range buffer 0 0");
-    print_string(buffer2.data);
-
-    CHECK_ERROR(remove_last_item_buffer(&buffer));
-    print_string("Removed last variant");
-    print_string(buffer.data);
-    CHECK_ERROR(remove_last_item_buffer(&buffer));
-    print_string("Removed last variant");
-    print_string(buffer.data);
-    CHECK_ERROR(remove_last_item_buffer(&buffer));
-    print_string("Removed last variant");
-    print_string(buffer.data);
-    CHECK_ERROR(remove_last_item_buffer(&buffer));
-    print_string("Removed last variant");
-    print_string(buffer.data);
-
-    CHECK_ERROR(append_item_buffer(&buffer, "1", 1));
-    CHECK_ERROR(append_item_buffer(&buffer, "2", 1));
-    CHECK_ERROR(append_item_buffer(&buffer, "3", 1));
-    CHECK_ERROR(append_item_buffer(&buffer, "4", 1));
-    CHECK_ERROR(append_item_buffer(&buffer, "5", 1));
-    print_string("Appended 5 items");
-    print_string(buffer.data);
-    CHECK_ERROR(remove_last_item_buffer(&buffer));
-    print_string("Removed last variant");
-    print_string(buffer.data);
-
-    char output[100] = {0};
-    CHECK_ERROR(remove_last_separator(&buffer, output, sizeof(output)));
-    print_string("Removed last separator");
-    print_string(output);
-
-    CHECK_ERROR(remove_first_separator(&buffer, output, sizeof(output)));
-    print_string("Removed first separator");
-    print_string(output);
 
     return parser_ok;
 }

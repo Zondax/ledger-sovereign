@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 #include "common_txdef.h"
+#include "schema_txdef.h"
 
 #define MAX_ITEMS 32
 #define MAX_STRING_LENGTH 100
@@ -47,6 +48,8 @@ typedef struct {
 typedef struct {
     char title[MAX_STRING_LENGTH];
     char data[MAX_STRING_LENGTH];
+    primitive_t primitive;
+    parser_context_t data_context;
 } ui_item_t;
 typedef struct {
     uint16_t qty;

@@ -34,6 +34,9 @@ void clear_item_data_buffer();
 bool is_item_data_empty();
 parser_error_t get_item_data(char *item_data, uint16_t item_data_len);
 
+parser_error_t set_primitive(primitive_t *value);
+parser_error_t set_data_context(parser_context_t *context);
+
 parser_error_t push_item(parser_tx_t *txObj);
 
 parser_error_t test_remove_last_item_buffer();
