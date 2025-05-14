@@ -26,6 +26,7 @@
 #include "crypto.h"
 #include "parser_common.h"
 #include "parser_impl.h"
+#include "render.h"
 #include "ui_item_manager.h"
 
 parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize) {
@@ -65,7 +66,7 @@ parser_error_t parser_validate(parser_tx_t *txObj) {
 }
 
 parser_error_t parser_getNumItems(const parser_tx_t *txObj, uint8_t *num_items) {
-    *num_items = txObj->ui_items.qty;
+    *num_items = txObj->ui_items_new.qty;
     if (*num_items == 0) {
         return parser_unexpected_number_items;
     }
@@ -112,11 +113,12 @@ parser_error_t page_title(char *outKey, uint16_t outKeyLen, const char *inValue)
     return parser_ok;
 }
 
-parser_error_t page_item(char *outValue, uint16_t outValueLen, const char *title, const char *data, uint8_t pageIdx,
-                         uint8_t *pageCount) {
+parser_error_t page_item(const parser_tx_t *txObj, char *outValue, uint16_t outValueLen, const char *title,
+                         primitive_t *primitive, parser_context_t *data_context, uint8_t pageIdx, uint8_t *pageCount) {
     CHECK_INPUT(outValue);
     CHECK_INPUT(title);
-    CHECK_INPUT(data);
+    CHECK_INPUT(primitive);
+    CHECK_INPUT(data_context);
     CHECK_INPUT(pageCount);
 
     MEMZERO(outValue, outValueLen);
@@ -127,29 +129,42 @@ parser_error_t page_item(char *outValue, uint16_t outValueLen, const char *title
     }
     outValueLen--;
 
-    uint16_t dataLen = strlen(data);
-    if (dataLen == 0) {
-        return parser_no_data;
-    }
-
     clear_item_title_buffer();
     init_item_title_buffer(title);
 
     uint8_t items_qty = 0;
     CHECK_ERROR(get_title_item_qty(&items_qty))
 
+    char ui_buffer[200] = {0};
+    uint8_t page_count_title = 0;
     if (items_qty > 1) {
-        char title_str[200] = {0};
-        CHECK_ERROR(create_item_title(0, items_qty - 1, title_str, sizeof(title_str)));
-        strncat(title_str, ":", 1);
-
-        pageString(outValue, outValueLen, title_str, pageIdx, pageCount);
+        CHECK_ERROR(create_item_title(0, items_qty - 1, ui_buffer, sizeof(ui_buffer)));
+        strncat(ui_buffer, ":", 1);
+        page_count_title = (uint8_t)(strlen(ui_buffer) / outValueLen);
+        const uint16_t lastChunkLen_title = (strlen(ui_buffer) % outValueLen);
+        if (lastChunkLen_title > 0) {
+            page_count_title++;
+        }
     }
 
-    (*pageCount)++;
-    if (pageIdx == *pageCount - 1) {
-        strncat(outValue, data, dataLen);
+    uint8_t page_count_content = 0;
+    char ui_data_buffer[200] = {0};
+    CHECK_ERROR(render_primitive(data_context, txObj, primitive, ui_data_buffer, sizeof(ui_data_buffer)));
+    data_context->offset = 0;
+    page_count_content = (uint8_t)(strlen(ui_data_buffer) / outValueLen);
+    const uint16_t lastChunkLen_content = (strlen(ui_data_buffer) % outValueLen);
+    if (lastChunkLen_content > 0) {
+        page_count_content++;
     }
+
+    uint16_t aux = 0;
+    if (pageIdx < page_count_title) {
+        pageString(outValue, outValueLen, ui_buffer, pageIdx, &aux);
+    } else {
+        pageString(outValue, outValueLen, ui_data_buffer, pageIdx - page_count_title, &aux);
+    }
+
+    *pageCount = page_count_title + page_count_content;
 
     return parser_ok;
 }
@@ -165,9 +180,10 @@ parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
-    CHECK_ERROR(page_title(outKey, outKeyLen, txObj->ui_items.items[displayIdx].title))
-    CHECK_ERROR(page_item(outVal, outValLen, txObj->ui_items.items[displayIdx].title, txObj->ui_items.items[displayIdx].data,
-                          pageIdx, pageCount))
+    CHECK_ERROR(page_title(outKey, outKeyLen, txObj->ui_items_new.items[displayIdx].title))
+    CHECK_ERROR(page_item(txObj, outVal, outValLen, txObj->ui_items_new.items[displayIdx].title,
+                          &txObj->ui_items_new.items[displayIdx].primitive,
+                          &txObj->ui_items_new.items[displayIdx].data_context, pageIdx, pageCount))
 
     return parser_ok;
 }

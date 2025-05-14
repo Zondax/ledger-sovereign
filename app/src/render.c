@@ -14,26 +14,24 @@
  *  limitations under the License.
  ********************************************************************************/
 
-#include "schema_display.h"
-
 #include "app_mode.h"
 #include "bech32.h"
 #include "borsh.h"
+#include "schema_display.h"
 #include "schema_helper.h"
 #include "schema_reader.h"
-#include "ui_item_manager.h"
 #include "ui_utils.h"
 #include "zxerror.h"
 #include "zxformat.h"
 
-char item_data[MAX_STRING_LENGTH] = {0};
-
 #define NONE_STRING "None"
 
-parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *input_token) {
+parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *input_token, char *outValue,
+                                  uint16_t outValueLen) {
     CHECK_INPUT(txObj);
     CHECK_INPUT(name);
     CHECK_INPUT(input_token);
+    CHECK_INPUT(outValue);
 
     name_registries_t registries = txObj->schema.chain_data.name_registries;
     for (uint32_t i = 0; i < registries.qty; i++) {
@@ -45,9 +43,8 @@ parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *in
                 CHECK_ERROR(read_registry(&name_registry.registry, &registry));
                 if (registry.data.len == input_token->len &&
                     MEMCMP(registry.data.ptr, input_token->ptr, input_token->len) == 0) {
-                    MEMZERO(item_data, sizeof(item_data));
-                    MEMCPY(item_data, registry.name.ptr, registry.name.len);
-                    append_item_data(item_data, registry.name.len);
+                    MEMZERO(outValue, outValueLen);
+                    MEMCPY(outValue, registry.name.ptr, registry.name.len);
                     return parser_ok;
                 }
             }
@@ -57,10 +54,10 @@ parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *in
     return parser_name_registry_not_found;
 }
 
-parser_error_t render_fixed_point(parser_context_t *ctx, parser_tx_t *txObj, fixed_point_display_t display,
-                                  uint128_t value) {
+parser_error_t render_fixed_point(parser_context_t *ctx, fixed_point_display_t display, uint128_t value, char *outValue,
+                                  uint16_t outValueLen) {
     CHECK_INPUT(ctx);
-    CHECK_INPUT(txObj);
+    CHECK_INPUT(outValue);
 
     switch (display.type) {
         case FIXED_POINT_DISPLAY_DECIMALS:
@@ -74,9 +71,8 @@ parser_error_t render_fixed_point(parser_context_t *ctx, parser_tx_t *txObj, fix
             }
             uint8_t offset = ctx->buffer.ptr[ctx->offset + display.from_sibling_field.byte_offset];
 
-            MEMZERO(item_data, sizeof(item_data));
-            CHECK_ERROR(render_number(value.hi, value.lo, offset, "", "", item_data, sizeof(item_data)));
-            append_item_data(item_data, strlen(item_data));
+            MEMZERO(outValue, outValueLen);
+            CHECK_ERROR(render_number(value.hi, value.lo, offset, "", "", outValue, outValueLen));
 
             return parser_ok;
         default:
@@ -84,10 +80,10 @@ parser_error_t render_fixed_point(parser_context_t *ctx, parser_tx_t *txObj, fix
     }
 }
 
-parser_error_t render_primitive_integer(parser_context_t *ctx, parser_tx_t *txObj, integer_display_t display,
-                                        uint128_t value) {
+parser_error_t render_primitive_integer(parser_context_t *ctx, integer_display_t display, uint128_t value, char *outValue,
+                                        uint16_t outValueLen) {
     CHECK_INPUT(ctx);
-    CHECK_INPUT(txObj);
+    CHECK_INPUT(outValue);
 
     switch (display.type) {
         case INTEGER_DISPLAY_HEX:
@@ -95,53 +91,62 @@ parser_error_t render_primitive_integer(parser_context_t *ctx, parser_tx_t *txOb
             print_string("render_primitive_integer IMPLEMENT ME 0");
             return parser_unexpected_type;
         case INTEGER_DISPLAY_DECIMAL:
-            MEMZERO(item_data, sizeof(item_data));
-            CHECK_ERROR(render_number(value.hi, value.lo, 0, "", "", item_data, sizeof(item_data)));
-            append_item_data(item_data, strlen(item_data));
+            MEMZERO(outValue, outValueLen);
+            print_u8("INTEGER_DISPLAY_DECIMAL: ", display.type);
+            CHECK_ERROR(render_number(value.hi, value.lo, 0, "", "", outValue, outValueLen));
             break;
         case INTEGER_DISPLAY_FIXED_POINT:
-            CHECK_ERROR(render_fixed_point(ctx, txObj, display.fixed_point, value));
+            print_u8("INTEGER_DISPLAY_FIXED_POINT: ", display.type);
+            CHECK_ERROR(render_fixed_point(ctx, display.fixed_point, value, outValue, outValueLen));
             break;
         default:
             return parser_unexpected_type;
     }
 
+    print_u8("render_primitive_integer finished: ", display.type);
+
     return parser_ok;
 }
 
-parser_error_t render_integer(parser_context_t *ctx, parser_tx_t *txObj, primitive_integer_t *primitive) {
+parser_error_t render_integer(parser_context_t *ctx, primitive_integer_t *primitive, char *outValue, uint16_t outValueLen) {
     CHECK_INPUT(ctx);
-    CHECK_INPUT(txObj);
     CHECK_INPUT(primitive);
 
     uint128_t value = {0};
     switch (primitive->type) {
         case INTEGER_I8:
         case INTEGER_U8: {
+            print_u8("INTEGER_U8: ", primitive->type);
             uint8_t *ptr = (uint8_t *)&value;
             CHECK_ERROR(read_u8(ctx, ptr));
             break;
         }
         case INTEGER_I16:
         case INTEGER_U16: {
+            print_u8("INTEGER_U16: ", primitive->type);
             uint16_t *ptr = (uint16_t *)&value;
             CHECK_ERROR(read_u16(ctx, ptr));
             break;
         }
         case INTEGER_I32:
         case INTEGER_U32: {
+            print_u8("INTEGER_U32: ", primitive->type);
             uint32_t *ptr = (uint32_t *)&value;
             CHECK_ERROR(read_u32(ctx, ptr));
             break;
         }
         case INTEGER_I64:
         case INTEGER_U64: {
+            print_u8("INTEGER_U64: ", primitive->type);
             CHECK_ERROR(read_u64(ctx, &value.lo));
             break;
         }
         case INTEGER_I128:
         case INTEGER_U128: {
+            print_u8("INTEGER_U128_1: ", primitive->type);
+            print_buffer(&ctx->buffer, "INTEGER_U128 buffer!!!!!!!!!!!!!!");
             CHECK_ERROR(read_u64(ctx, &value.lo));
+            print_u8("INTEGER_U128_2: ", primitive->type);
             CHECK_ERROR(read_u64(ctx, &value.hi));
             break;
         }
@@ -149,15 +154,17 @@ parser_error_t render_integer(parser_context_t *ctx, parser_tx_t *txObj, primiti
             return parser_unexpected_type;
     }
 
-    CHECK_ERROR(render_primitive_integer(ctx, txObj, primitive->display, value));
+    CHECK_ERROR(render_primitive_integer(ctx, primitive->display, value, outValue, outValueLen));
 
     return parser_ok;
 }
 
-parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, primitive_byte_array_t *byte_array) {
+parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, primitive_byte_array_t *byte_array,
+                                 char *outValue, uint16_t outValueLen) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
     CHECK_INPUT(byte_array);
+    CHECK_INPUT(outValue);
 
     bytes_t array = {0};
     array.len = byte_array->len;
@@ -166,7 +173,7 @@ parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, prim
 
     if (byte_array->has_name_registry) {
         // check if name registry exist
-        CHECK_ERROR(find_name_registry(txObj, &byte_array->name_registry, &array));
+        CHECK_ERROR(find_name_registry(txObj, &byte_array->name_registry, &array, outValue, outValueLen));
         return parser_ok;
     }
 
@@ -189,10 +196,9 @@ parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, prim
             return parser_unexpected_type;
         case BYTE_DISPLAY_BECH32M: {
             const char *hrp = (char *)byte_array->display.bech32m.prefix.prefix.ptr;
-            MEMZERO(item_data, sizeof(item_data));
+            MEMZERO(outValue, outValueLen);
             MAP_ZXERR_TO_PARSER_ERR(
-                bech32EncodeFromBytes(item_data, sizeof(item_data), hrp, array.ptr, array.len, 1, BECH32_ENCODING_BECH32M));
-            append_item_data(item_data, strlen(item_data));
+                bech32EncodeFromBytes(outValue, outValueLen, hrp, array.ptr, array.len, 1, BECH32_ENCODING_BECH32M));
             break;
         }
         case BYTE_DISPLAY_BASE58:
@@ -206,25 +212,25 @@ parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, prim
     return parser_ok;
 }
 
-parser_error_t render_primitive(parser_context_t *ctx, parser_tx_t *txObj, primitive_t *primitive) {
+parser_error_t render_primitive(parser_context_t *ctx, parser_tx_t *txObj, primitive_t *primitive, char *outValue,
+                                uint16_t outValueLen) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
+    CHECK_INPUT(outValue);
 
     uint16_t primitive_size = sizeof(primitive);
     print_u16("Primitive size: ", primitive_size);
 
-    set_primitive(primitive);
-
     switch (primitive->type) {
         case PRIMITIVE_INTEGER:
             primitive_size = sizeof(primitive->integer);
-            print_u16("Primitive size integer: ", primitive_size);
-            CHECK_ERROR(render_integer(ctx, txObj, &primitive->integer));
+            print_u16("Primitive size integer_1: ", primitive_size);
+            CHECK_ERROR(render_integer(ctx, &primitive->integer, outValue, outValueLen));
             break;
         case PRIMITIVE_BYTE_ARRAY:
             primitive_size = sizeof(primitive->byte_array);
             print_u16("Primitive size byte_array: ", primitive_size);
-            CHECK_ERROR(render_byte_array(ctx, txObj, &primitive->byte_array));
+            CHECK_ERROR(render_byte_array(ctx, txObj, &primitive->byte_array, outValue, outValueLen));
             break;
         case PRIMITIVE_BYTE_VEC:
             // TODO: Implement me
@@ -239,9 +245,8 @@ parser_error_t render_primitive(parser_context_t *ctx, parser_tx_t *txObj, primi
             print_string("render_primitive IMPLEMENT ME 2");
             return parser_unexpected_type;
         case PRIMITIVE_STRING:
-            // TODO: Implement me
-            print_string("render_primitive IMPLEMENT ME 3");
-            return parser_unexpected_type;
+            MEMCPY(outValue, ctx->buffer.ptr, ctx->buffer.len);
+            break;
         case PRIMITIVE_BOOLEAN:
             // TODO: Implement me
             print_string("render_primitive IMPLEMENT ME 4");
@@ -250,6 +255,8 @@ parser_error_t render_primitive(parser_context_t *ctx, parser_tx_t *txObj, primi
             print_u8("Unknown type: ", primitive->type);
             return parser_unexpected_type;
     }
+
+    print_u8("render_primitive finished: ", primitive->type);
 
     return parser_ok;
 }

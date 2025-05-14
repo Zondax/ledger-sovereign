@@ -22,7 +22,8 @@ extern "C" {
 
 #include "parser_common.h"
 
-parser_error_t render_primitive(parser_context_t *ctx, parser_tx_t *txObj, primitive_t *primitive);
+parser_error_t render_primitive(parser_context_t *ctx, parser_tx_t *txObj, primitive_t *primitive, char *outValue,
+                                uint16_t outValueLen);
 
 #ifdef __cplusplus
 }

@@ -19,10 +19,14 @@
 #include "borsh.h"
 #include "schema_display.h"
 #include "schema_reader.h"
+#include "stack_manager.h"
 #include "unsigned_transaction_reader.h"
 #include "zxerror.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
+    checkStack();
+    ZEMU_LOGF(50, "ANDYYYYYY!\n")
+
     CHECK_ERROR(schema_merkle_proofs_read(c, v));
     CHECK_ERROR(schema_extra_data_read(c, v));
     CHECK_ERROR(schema_parser_transaction(c, v));
