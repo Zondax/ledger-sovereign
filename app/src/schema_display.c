@@ -269,7 +269,6 @@ parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) 
                 }
             } else {
                 // TODO: check if this is correct
-                clear_item_data_buffer();
             }
         }
     } else {
@@ -523,7 +522,6 @@ parser_error_t schema_parser_transaction(parser_context_t *ctx, parser_tx_t *txO
 
     init_item_title_buffer(NULL);
     init_item_title_buffer_new(NULL);
-    init_item_data_buffer();
     set_enable_push_item(true);
 
     txObj->unsigned_transaction_raw.buffer.ptr = ctx->buffer.ptr + ctx->offset;

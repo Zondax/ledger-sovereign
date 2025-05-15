@@ -28,7 +28,6 @@
 
 item_buffer_t item_title_buffer = {0};
 item_buffer_t item_title_buffer_new = {0};
-item_buffer_t item_data_buffer = {0};
 primitive_t primitive;
 parser_context_t data_context;
 static bool data_context_full = false;
@@ -182,37 +181,6 @@ parser_error_t get_item_title_range_length(uint16_t index_start, uint16_t index_
 
 parser_error_t get_item_title_range_length_new(uint16_t index_start, uint16_t index_end, size_t *total_length) {
     CHECK_ERROR(get_item_buffer_range_length(&item_title_buffer_new, index_start, index_end, total_length));
-    return parser_ok;
-}
-
-// Item data buffer
-void init_item_data_buffer() { init_item_buffer(&item_data_buffer, NULL, SEPARATOR_DATA_OPEN, SEPARATOR_DATA_CLOSE); }
-
-parser_error_t append_item_data(const char *input, uint16_t input_len) {
-    if (!item_data_buffer.initialized) {
-        init_item_data_buffer();
-    }
-    CHECK_ERROR(append_item_buffer(&item_data_buffer, input, input_len));
-
-    item_data_buffer.qty++;
-
-    print_string("Appended variant data\n");
-    print_string(item_data_buffer.data);
-
-    return parser_ok;
-}
-
-void clear_item_data_buffer() { clear_item_buffer(&item_data_buffer); }
-
-bool is_item_data_empty() {
-    bool is_empty = false;
-    is_item_buffer_empty(&item_data_buffer, &is_empty);
-    return is_empty;
-}
-
-parser_error_t get_item_data(char *item_data, uint16_t item_data_len) {
-    CHECK_INPUT(item_data);
-    CHECK_ERROR(get_item_buffer_content(&item_data_buffer, 0, item_data, item_data_len));
     return parser_ok;
 }
 

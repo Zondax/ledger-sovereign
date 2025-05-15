@@ -37,12 +37,6 @@ parser_error_t get_item_title_new(char *item_title, uint16_t item_title_len);
 parser_error_t create_item_title_new(uint16_t index_start, uint16_t index_end, char *output, uint16_t output_len);
 parser_error_t get_item_title_range_length_new(uint16_t index_start, uint16_t index_end, size_t *total_length);
 
-// Item data
-void init_item_data_buffer();
-parser_error_t append_item_data(const char *input, uint16_t input_len);
-void clear_item_data_buffer();
-bool is_item_data_empty();
-parser_error_t get_item_data(char *item_data, uint16_t item_data_len);
 bool is_data_context_empty();
 
 parser_error_t set_primitive(primitive_t *value);
