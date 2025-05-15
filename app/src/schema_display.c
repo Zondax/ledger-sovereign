@@ -30,13 +30,28 @@ bool ui_expert_mode = false;
 
 #define NONE_STRING "None"
 
+parser_error_t append_structured_show_as_title(const bytes_t *structured_show_as, uint32_t field_index, bool *remove_title) {
+    CHECK_INPUT(structured_show_as);
+    CHECK_INPUT(remove_title);
+
+    *remove_title = false;
+    char title[100] = {0};
+    CHECK_ERROR(find_bracket_content((char *)structured_show_as->ptr, field_index, title, sizeof(title)));
+    uint16_t len = strlen(title);
+    if (strlen(title) > 0) {
+        CHECK_ERROR(append_item_title(title, len));
+        *remove_title = true;
+    }
+    return parser_ok;
+}
+
 parser_error_t schema_display_integer(parser_context_t *ctx, primitive_integer_t *primitive, parser_context_t *ctx_to_push) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(primitive);
     CHECK_INPUT(ctx_to_push);
 
-    uint16_t len_to_push = 0;  
-    const uint8_t *ctx_mem = ctx->buffer.ptr + ctx->offset;   
+    uint16_t len_to_push = 0;
+    const uint8_t *ctx_mem = ctx->buffer.ptr + ctx->offset;
     switch (primitive->type) {
         case INTEGER_I8:
         case INTEGER_U8: {
@@ -106,7 +121,8 @@ parser_error_t schema_display_integer(parser_context_t *ctx, primitive_integer_t
     return parser_ok;
 }
 
-parser_error_t schema_display_byte_array(parser_context_t *ctx, primitive_byte_array_t *byte_array, parser_context_t *ctx_to_push) {
+parser_error_t schema_display_byte_array(parser_context_t *ctx, primitive_byte_array_t *byte_array,
+                                         parser_context_t *ctx_to_push) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(byte_array);
     CHECK_INPUT(ctx_to_push);
@@ -226,56 +242,38 @@ parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) 
     CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
 
     named_field_t named_field = {0};
-    if (struct_type.has_show_as || struct_type.has_structured_show_as) {
-        for (uint32_t i = 0; i < struct_type.fields_qty; i++) {
-            MEMZERO(&named_field, sizeof(named_field_t));
-            CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
 
-            bool remove_title = false;
-            set_enable_push_item(true);
-            if (!named_field.silent || !is_link_skip(&named_field.value)) {
-                if (!named_field.is_expert || ui_expert_mode) {
-                    char structured_show_as[100] = {0};
-                    CHECK_ERROR(find_bracket_content((char *)struct_type.structured_show_as.ptr, i, structured_show_as,
-                                                     sizeof(structured_show_as)));
-                    uint16_t len = strlen(structured_show_as);
-                    if (len > 0) {
-                        CHECK_ERROR(append_item_title(structured_show_as, len));
-                        remove_title = true;
-                    }
-                } else {
-                    set_enable_push_item(false);
-                }
-            }
+    for (uint32_t i = 0; i < struct_type.fields_qty; i++) {
+        MEMZERO(&named_field, sizeof(named_field_t));
+        CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
 
-            switch (named_field.value.tag) {
-                case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, named_field.value.data.by_index));
-                    break;
-                case LINK_IMMEDIATE:
-                    CHECK_ERROR(schema_display_primitive(ctx, txObj, &named_field.value.data.immediate));
-                    break;
-                default:
-                    print_string("schema_display_struct IMPLEMENT ME 1");
-                    return parser_unexpected_type;
-            }
-            if (remove_title) {
-                CHECK_ERROR(remove_last_item_title());
-            }
-        }
-    } else {
-        for (uint32_t i = 0; i < struct_type.fields_qty; i++) {
-            MEMZERO(&named_field, sizeof(named_field_t));
-            CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
-            bool remove_title = false;
-            if ((!named_field.silent && !is_link_skip(&named_field.value) && !named_field.is_expert) || ui_expert_mode) {
+        bool show_field = should_show_field(&named_field.value, named_field.silent, named_field.is_expert, ui_expert_mode);
+        set_enable_push_item(show_field);
+
+        bool remove_title = false;
+        if (show_field) {
+            if (struct_type.has_show_as || struct_type.has_structured_show_as) {
+                CHECK_ERROR(append_structured_show_as_title(&struct_type.structured_show_as, i, &remove_title));
+            } else {
                 CHECK_ERROR(append_item_title((char *)named_field.display_name.ptr, named_field.display_name.len));
                 remove_title = true;
             }
-            CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, named_field.value.data.by_index));
-            if (remove_title) {
-                CHECK_ERROR(remove_last_item_title());
-            }
+        }
+
+        switch (named_field.value.tag) {
+            case LINK_BY_INDEX:
+                CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, named_field.value.data.by_index));
+                break;
+            case LINK_IMMEDIATE:
+                CHECK_ERROR(schema_display_primitive(ctx, txObj, &named_field.value.data.immediate));
+                break;
+            default:
+                print_string("schema_display_struct IMPLEMENT ME 1");
+                return parser_unexpected_type;
+        }
+
+        if (remove_title) {
+            CHECK_ERROR(remove_last_item_title());
         }
     }
 
@@ -291,45 +289,41 @@ parser_error_t schema_display_tuple(parser_context_t *ctx, parser_tx_t *txObj) {
     CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
 
     unnamed_field_t unnamed_field = {0};
-    if (tuple_type.has_show_as || tuple_type.has_structured_show_as) {
-        for (uint32_t i = 0; i < tuple_type.fields_qty; i++) {
-            MEMZERO(&unnamed_field, sizeof(unnamed_field_t));
-            CHECK_ERROR(read_unnamed_field(&tuple_type.unnamed_fields, &unnamed_field));
-            switch (unnamed_field.value.tag) {
-                case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, unnamed_field.value.data.by_index));
-                    break;
-                default:
-                    print_string("Tuple field is not a link by index\n");
-                    return parser_unexpected_type;
-            }
-        }
-    } else {
-        for (uint32_t i = 0; i < tuple_type.fields_qty; i++) {
-            MEMZERO(&unnamed_field, sizeof(unnamed_field_t));
-            CHECK_ERROR(read_unnamed_field(&tuple_type.unnamed_fields, &unnamed_field));
 
-            bool remove_title = false;
-            if (tuple_type.fields_qty > 1) {
-                if (!unnamed_field.is_expert || ui_expert_mode) {
+    for (uint32_t i = 0; i < tuple_type.fields_qty; i++) {
+        MEMZERO(&unnamed_field, sizeof(unnamed_field_t));
+        CHECK_ERROR(read_unnamed_field(&tuple_type.unnamed_fields, &unnamed_field));
+
+        bool show_field =
+            should_show_field(&unnamed_field.value, unnamed_field.silent, unnamed_field.is_expert, ui_expert_mode);
+        // set_enable_push_item(show_field);
+
+        bool remove_title = false;
+        if (show_field) {
+            if (tuple_type.has_show_as || tuple_type.has_structured_show_as) {
+                CHECK_ERROR(append_structured_show_as_title(&tuple_type.structured_show_as, i, &remove_title));
+            } else {
+                if (tuple_type.fields_qty > 1) {
                     CHECK_ERROR(append_item_title_index(i));
                     remove_title = true;
                 }
             }
-            switch (unnamed_field.value.tag) {
-                case LINK_BY_INDEX:
-                    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, unnamed_field.value.data.by_index));
-                    break;
-                case LINK_IMMEDIATE:
-                    CHECK_ERROR(schema_display_primitive(ctx, txObj, &unnamed_field.value.data.immediate));
-                    break;
-                default:
-                    print_string("Tuple field is not a link by index\n");
-                    return parser_unexpected_type;
-            }
-            if (remove_title) {
-                CHECK_ERROR(remove_last_item_title());
-            }
+        }
+
+        switch (unnamed_field.value.tag) {
+            case LINK_BY_INDEX:
+                CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, unnamed_field.value.data.by_index));
+                break;
+            case LINK_IMMEDIATE:
+                CHECK_ERROR(schema_display_primitive(ctx, txObj, &unnamed_field.value.data.immediate));
+                break;
+            default:
+                print_string("Tuple field is not a link by index\n");
+                return parser_unexpected_type;
+        }
+
+        if (remove_title) {
+            CHECK_ERROR(remove_last_item_title());
         }
     }
 

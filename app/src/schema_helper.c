@@ -123,3 +123,15 @@ bool is_link_skip(link_t *link) {
     }
     return false;
 }
+
+bool should_show_field(link_t *value, bool silent, bool field_is_expert, bool expert_mode) {
+    if (silent && is_link_skip(value)) {
+        return false;
+    }
+
+    if (field_is_expert && !expert_mode) {
+        return false;
+    }
+
+    return true;
+}
