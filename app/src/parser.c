@@ -109,8 +109,20 @@ parser_error_t page_title(char *outKey, uint16_t outKeyLen, const char *inValue)
     }
 
     CHECK_ERROR(create_item_title(items_qty - 1, items_qty, outKey, outKeyLen));
+    if (strlen(outKey) <= 1 && items_qty > 1) {
+        MEMZERO(outKey, outKeyLen);
+        CHECK_ERROR(create_item_title(items_qty - 2, items_qty, outKey, outKeyLen));
+    }
 
     return parser_ok;
+}
+
+static uint8_t calculate_page_count(const char *text, uint16_t maxCharsPerPage) {
+    uint8_t pageCount = (uint8_t)(strlen(text) / maxCharsPerPage);
+    if (strlen(text) % maxCharsPerPage > 0) {
+        pageCount++;
+    }
+    return pageCount;
 }
 
 parser_error_t page_item(const parser_tx_t *txObj, char *outValue, uint16_t outValueLen, const char *title,
@@ -138,24 +150,26 @@ parser_error_t page_item(const parser_tx_t *txObj, char *outValue, uint16_t outV
     char ui_buffer[200] = {0};
     uint8_t page_count_title = 0;
     if (items_qty > 1) {
-        CHECK_ERROR(create_item_title(0, items_qty - 1, ui_buffer, sizeof(ui_buffer)));
-        strncat(ui_buffer, ":", 1);
-        page_count_title = (uint8_t)(strlen(ui_buffer) / outValueLen);
-        const uint16_t lastChunkLen_title = (strlen(ui_buffer) % outValueLen);
-        if (lastChunkLen_title > 0) {
-            page_count_title++;
+        CHECK_ERROR(create_item_title(items_qty - 1, items_qty, ui_buffer, sizeof(ui_buffer)));
+        uint16_t ui_buffer_len = strlen(ui_buffer);
+        MEMZERO(ui_buffer, sizeof(ui_buffer));
+        if (ui_buffer_len == 1) {
+            if (items_qty > 2) {
+                CHECK_ERROR(create_item_title(0, items_qty - 2, ui_buffer, sizeof(ui_buffer)));
+                strncat(ui_buffer, ":", 1);
+            }
+        } else {
+            CHECK_ERROR(create_item_title(0, items_qty - 1, ui_buffer, sizeof(ui_buffer)));
+            strncat(ui_buffer, ":", 1);
         }
+        page_count_title = calculate_page_count(ui_buffer, outValueLen);
     }
 
     uint8_t page_count_content = 0;
     char ui_data_buffer[200] = {0};
     CHECK_ERROR(render_primitive(data_context, txObj, primitive, ui_data_buffer, sizeof(ui_data_buffer)));
     data_context->offset = 0;
-    page_count_content = (uint8_t)(strlen(ui_data_buffer) / outValueLen);
-    const uint16_t lastChunkLen_content = (strlen(ui_data_buffer) % outValueLen);
-    if (lastChunkLen_content > 0) {
-        page_count_content++;
-    }
+    page_count_content = calculate_page_count(ui_data_buffer, outValueLen);
 
     uint16_t aux = 0;
     if (pageIdx < page_count_title) {

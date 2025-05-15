@@ -116,37 +116,30 @@ parser_error_t render_integer(parser_context_t *ctx, primitive_integer_t *primit
     switch (primitive->type) {
         case INTEGER_I8:
         case INTEGER_U8: {
-            print_u8("INTEGER_U8: ", primitive->type);
             uint8_t *ptr = (uint8_t *)&value;
             CHECK_ERROR(read_u8(ctx, ptr));
             break;
         }
         case INTEGER_I16:
         case INTEGER_U16: {
-            print_u8("INTEGER_U16: ", primitive->type);
             uint16_t *ptr = (uint16_t *)&value;
             CHECK_ERROR(read_u16(ctx, ptr));
             break;
         }
         case INTEGER_I32:
         case INTEGER_U32: {
-            print_u8("INTEGER_U32: ", primitive->type);
             uint32_t *ptr = (uint32_t *)&value;
             CHECK_ERROR(read_u32(ctx, ptr));
             break;
         }
         case INTEGER_I64:
         case INTEGER_U64: {
-            print_u8("INTEGER_U64: ", primitive->type);
             CHECK_ERROR(read_u64(ctx, &value.lo));
             break;
         }
         case INTEGER_I128:
         case INTEGER_U128: {
-            print_u8("INTEGER_U128_1: ", primitive->type);
-            print_buffer(&ctx->buffer, "INTEGER_U128 buffer!!!!!!!!!!!!!!");
             CHECK_ERROR(read_u64(ctx, &value.lo));
-            print_u8("INTEGER_U128_2: ", primitive->type);
             CHECK_ERROR(read_u64(ctx, &value.hi));
             break;
         }

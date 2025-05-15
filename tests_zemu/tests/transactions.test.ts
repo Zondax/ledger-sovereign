@@ -45,7 +45,7 @@ describe.each(TRANSACTIONS_TEST_CASES)('Tx', function (data) {
       await sim.compareSnapshotsAndApprove('.', `${m.prefix.toLowerCase()}-sign_${data.name}`)
 
       const signatureResponse = await signatureRequest
-      console.log(signatureResponse)
+      console.log(signatureResponse.signature.toString('hex'))
 
       const chainHash = data.schema.chainHash
       const txBlobWithChainHash = Buffer.concat([txBlob, chainHash])
