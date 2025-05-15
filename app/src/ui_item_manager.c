@@ -26,10 +26,9 @@
 #include "zxformat.h"
 #include "zxmacros.h"
 
+#define MAX_U16_STR_LEN 6
+
 item_buffer_t item_title_buffer = {0};
-primitive_t primitive;
-parser_context_t data_context;
-static bool data_context_full = false;
 static bool enable_push_item = false;
 
 // Item title buffer
@@ -47,6 +46,12 @@ parser_error_t append_item_title(const char *buffer, uint16_t input_len) {
     print_string(item_title_buffer.data);
 
     return parser_ok;
+}
+
+parser_error_t append_item_title_index(uint16_t index) {
+    char index_str[MAX_U16_STR_LEN] = {0};
+    snprintf(index_str, sizeof(index_str), "%u", index);
+    return append_item_title(index_str, strlen(index_str));
 }
 
 parser_error_t remove_last_item_title() {
@@ -105,30 +110,25 @@ parser_error_t get_item_title_range_length(uint16_t index_start, uint16_t index_
     return parser_ok;
 }
 
-parser_error_t set_primitive(primitive_t *value) {
-    CHECK_INPUT(value);
-    MEMZERO(&primitive, sizeof(primitive));
-    primitive = *value;
-    return parser_ok;
-}
-
-parser_error_t set_data_context(parser_context_t *context) {
-    CHECK_INPUT(context);
-    MEMZERO(&data_context, sizeof(data_context));
-    MEMCPY(&data_context, context, sizeof(data_context));
-    data_context_full = true;
-    return parser_ok;
-}
-
-bool is_data_context_empty() { return !data_context_full; }
-
 void set_enable_push_item(bool value) { enable_push_item = value; }
 
-parser_error_t push_item(parser_tx_t *txObj) {
+bool is_enable_push_item() { return enable_push_item; }
+
+parser_error_t push_item_string(parser_tx_t *txObj, const char *input, uint16_t input_len) {
+    parser_context_t ctx_bytes = {0};
+    ctx_bytes.buffer.ptr = (uint8_t *)input;
+    ctx_bytes.buffer.len = input_len;
+    primitive_t primitive = {0};
+    primitive.type = PRIMITIVE_STRING;
+    return push_item(txObj, &primitive, &ctx_bytes);
+}
+
+parser_error_t push_item(parser_tx_t *txObj, primitive_t *primitive, parser_context_t *data_context) {
     CHECK_INPUT(txObj);
+    CHECK_INPUT(primitive);
+    CHECK_INPUT(data_context);
 
     if (!enable_push_item) {
-        data_context_full = false;
         return parser_ok;
     }
 
@@ -142,8 +142,8 @@ parser_error_t push_item(parser_tx_t *txObj) {
     }
 
     MEMCPY(txObj->ui_items_new.items[txObj->ui_items_new.qty].title, item_title_buffer.data, strlen(item_title_buffer.data));
-    txObj->ui_items_new.items[txObj->ui_items_new.qty].primitive = primitive;
-    txObj->ui_items_new.items[txObj->ui_items_new.qty].data_context = data_context;
+    txObj->ui_items_new.items[txObj->ui_items_new.qty].primitive = *primitive;
+    txObj->ui_items_new.items[txObj->ui_items_new.qty].data_context = *data_context;
     txObj->ui_items_new.qty++;
 
     for (uint16_t i = 0; i < txObj->ui_items_new.qty; i++) {
@@ -151,8 +151,6 @@ parser_error_t push_item(parser_tx_t *txObj) {
         print_string(txObj->ui_items_new.items[i].title);
         print_buffer(&txObj->ui_items_new.items[i].data_context.buffer, "data context");
     }
-
-    data_context_full = false;
 
     return parser_ok;
 }

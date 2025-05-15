@@ -19,6 +19,7 @@
 // Item title
 void init_item_title_buffer(const char *initial_data);
 parser_error_t append_item_title(const char *input, uint16_t input_len);
+parser_error_t append_item_title_index(uint16_t index);
 parser_error_t remove_last_item_title();
 parser_error_t get_title_item_qty(uint8_t *qty);
 void clear_item_title_buffer();
@@ -27,9 +28,8 @@ parser_error_t get_item_title(char *item_title, uint16_t item_title_len);
 parser_error_t create_item_title(uint16_t index_start, uint16_t index_end, char *output, uint16_t output_len);
 parser_error_t get_item_title_range_length(uint16_t index_start, uint16_t index_end, size_t *total_length);
 
-parser_error_t set_primitive(primitive_t *value);
-parser_error_t set_data_context(parser_context_t *context);
-bool is_data_context_empty();
-
 void set_enable_push_item(bool value);
-parser_error_t push_item(parser_tx_t *txObj);
+bool is_enable_push_item();
+
+parser_error_t push_item_string(parser_tx_t *txObj, const char *input, uint16_t input_len);
+parser_error_t push_item(parser_tx_t *txObj, primitive_t *primitive, parser_context_t *data_context);
