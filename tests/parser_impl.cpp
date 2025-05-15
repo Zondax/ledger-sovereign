@@ -27,44 +27,8 @@
 #include "parser.h"
 #include "parser_txdef.h"
 #include "schema_reader.h"
-#include "unsigned_transaction_reader.h"
 
 using namespace std;
-
-// TEST(SCALE, ReadPaymentMessage) {
-//     parser_context_t ctx = {0};
-//     parser_tx_t tx_obj = {0};
-//     parser_error_t err;
-//     uint8_t buffer[9000];
-//     auto bufferLen = parseHexString(
-//         buffer, sizeof(buffer),
-//         "09000001102700000000000000000000000000000001d0070000000000000000000000000000d00700000000000000000000000000000132000"
-//         "000000000000000000001000000000b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b000000000000000000000000000000"
-//         "000000e876481700000000000000000000000100ca9a3b0000000000ca9a3b00000000e110000000000000");
-
-//     ctx.buffer.ptr = buffer;
-//     ctx.buffer.len = bufferLen;
-//     err = unsigned_transaction_read(&ctx, &tx_obj);
-
-//     EXPECT_EQ(err, parser_ok) << parser_getErrorDescription(err);
-// }
-
-// TEST(SCALE, ReadBankCallMessage) {
-//     parser_context_t ctx = {0};
-//     parser_tx_t tx_obj = {0};
-//     parser_error_t err;
-//     uint8_t buffer[9000];
-//     auto bufferLen =
-//         parseHexString(buffer, sizeof(buffer),
-//                        "0003102700000000000000000000000000001717171717171717171717171717171717171717171717171717171717171706"
-//                        "000b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0000000000000000000000000000000000e8764817"
-//                        "00000000000000000000000100ca9a3b0000000000ca9a3b00000000e110000000000000");
-
-//     ctx.buffer.ptr = buffer;
-//     ctx.buffer.len = bufferLen;
-//     err = unsigned_transaction_read(&ctx, &tx_obj);
-//     EXPECT_EQ(err, parser_ok) << parser_getErrorDescription(err);
-// }
 
 // TEST(SCALE, ReadMetadata) {
 //     parser_context_t ctx = {0};
