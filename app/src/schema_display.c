@@ -248,7 +248,6 @@ parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) 
         CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
 
         bool show_field = should_show_field(&named_field.value, named_field.silent, named_field.is_expert, ui_expert_mode);
-        set_enable_push_item(show_field);
 
         bool remove_title = false;
         if (show_field) {
@@ -258,6 +257,12 @@ parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) 
                 CHECK_ERROR(append_item_title((char *)named_field.display_name.ptr, named_field.display_name.len));
                 remove_title = true;
             }
+        }
+
+        set_enable_push_item(show_field);
+        // in the case that father field is not shown, we don't need to show the child field, even if it's enabled
+        if (show_field && is_item_title_empty()) {
+            set_enable_push_item(false);
         }
 
         switch (named_field.value.tag) {
@@ -296,7 +301,6 @@ parser_error_t schema_display_tuple(parser_context_t *ctx, parser_tx_t *txObj) {
 
         bool show_field =
             should_show_field(&unnamed_field.value, unnamed_field.silent, unnamed_field.is_expert, ui_expert_mode);
-        // set_enable_push_item(show_field);
 
         bool remove_title = false;
         if (show_field) {
@@ -308,6 +312,12 @@ parser_error_t schema_display_tuple(parser_context_t *ctx, parser_tx_t *txObj) {
                     remove_title = true;
                 }
             }
+        }
+
+        set_enable_push_item(show_field);
+        // in the case that father field is not shown, we don't need to show the child field, even if it's enabled
+        if (show_field && is_item_title_empty()) {
+            set_enable_push_item(false);
         }
 
         switch (unnamed_field.value.tag) {

@@ -57,7 +57,7 @@ parser_error_t append_item_title_index(uint16_t index) {
 parser_error_t remove_last_item_title() {
     CHECK_ERROR(remove_last_item_buffer(&item_title_buffer));
 
-    print_string("Removed last variant\n");
+    print_string("Removed last variant");
     print_string(item_title_buffer.data);
 
     return parser_ok;
@@ -73,6 +73,10 @@ void clear_item_title_buffer() { clear_item_buffer(&item_title_buffer); }
 bool is_item_title_empty() {
     bool is_empty = false;
     is_item_buffer_empty(&item_title_buffer, &is_empty);
+
+    print_string("is_item_title_empty");
+    print_string(item_title_buffer.data);
+
     return is_empty;
 }
 

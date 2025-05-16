@@ -136,7 +136,8 @@ parser_error_t is_item_buffer_empty(item_buffer_t *buffer, bool *is_empty) {
     if (!buffer->initialized) {
         return parser_ui_buffer_not_initialized;
     }
-    *is_empty = strlen(buffer->data) == 0;
+    *is_empty = buffer->data[0] == '\0';
+
     return parser_ok;
 }
 
@@ -155,6 +156,7 @@ parser_error_t remove_last_item_buffer(item_buffer_t *buffer) {
     }
 
     if (last_close == NULL || last_close == buffer->data) {
+        buffer->data[0] = '\0';
         return parser_ok;
     }
 
@@ -174,6 +176,12 @@ parser_error_t remove_last_item_buffer(item_buffer_t *buffer) {
         MEMCPY(last_close, buffer->separator_close, buffer->separator_close_len);
         // Null-terminate after the second last separator_close
         *(second_last_close + buffer->separator_close_len) = '\0';
+        // clear the buffer if it's empty
+        if (strlen(buffer->data) == buffer->separator_open_len &&
+            MEMCMP(buffer->data, buffer->separator_open, buffer->separator_open_len) == 0) {
+            buffer->data[0] = '\0';
+        }
+
     } else {
         // If no second last separator, clear the buffer
         buffer->data[0] = '\0';
