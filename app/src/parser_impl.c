@@ -24,7 +24,6 @@
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
     checkStack();
-    ZEMU_LOGF(50, "ANDYYYYYY!\n")
 
     CHECK_ERROR(schema_merkle_proofs_read(c, v));
     CHECK_ERROR(schema_extra_data_read(c, v));

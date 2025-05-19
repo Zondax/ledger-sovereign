@@ -166,8 +166,10 @@ parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, prim
 
     if (byte_array->has_name_registry) {
         // check if name registry exist
-        CHECK_ERROR(find_name_registry(txObj, &byte_array->name_registry, &array, outValue, outValueLen));
-        return parser_ok;
+        parser_error_t err = find_name_registry(txObj, &byte_array->name_registry, &array, outValue, outValueLen);
+        if (err == parser_ok || err != parser_name_registry_not_found) {
+            return err;
+        }
     }
 
     if (byte_array->len > MAX_INPUT_CHUNK) {
@@ -188,7 +190,8 @@ parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, prim
             print_string("render_byte_array IMPLEMENT ME 2");
             return parser_unexpected_type;
         case BYTE_DISPLAY_BECH32M: {
-            const char *hrp = (char *)byte_array->display.bech32m.prefix.prefix.ptr;
+            char hrp[MAX_HRP_LEN + 1] = {0};
+            MEMCPY(hrp, byte_array->display.bech32m.prefix.prefix.ptr, byte_array->display.bech32m.prefix.prefix.len);
             MEMZERO(outValue, outValueLen);
             MAP_ZXERR_TO_PARSER_ERR(
                 bech32EncodeFromBytes(outValue, outValueLen, hrp, array.ptr, array.len, 1, BECH32_ENCODING_BECH32M));

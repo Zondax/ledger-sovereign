@@ -184,9 +184,7 @@ parser_error_t schema_display_primitive(parser_context_t *ctx, parser_tx_t *txOb
             return parser_unexpected_type;
     }
 
-    if (is_enable_push_item()) {
-        CHECK_ERROR(push_item(txObj, primitive, &ctx_to_push));
-    }
+    CHECK_ERROR(push_item(txObj, primitive, &ctx_to_push));
     return parser_ok;
 }
 
@@ -226,9 +224,9 @@ parser_error_t schema_display_enum(parser_context_t *ctx, parser_tx_t *txObj) {
         ctx_bytes.buffer = variant.name;
         primitive_t primitive = {0};
         primitive.type = PRIMITIVE_STRING;
-        if (is_enable_push_item()) {
-            CHECK_ERROR(push_item_string(txObj, variant.name.ptr, variant.name.len));
-        }
+        set_enable_push_item(true);
+        CHECK_ERROR(push_item_string(txObj, (const char *)variant.name.ptr, variant.name.len));
+        set_enable_push_item(false);
     }
 
     return parser_ok;
@@ -342,9 +340,7 @@ parser_error_t schema_display_option(parser_context_t *ctx, parser_tx_t *txObj) 
     uint8_t discriminant = 0;
     CHECK_ERROR(read_u8(ctx, &discriminant));
     if (discriminant == 0) {
-        if (is_enable_push_item()) {
-            CHECK_ERROR(push_item_string(txObj, NONE_STRING, strlen(NONE_STRING)));
-        }
+        CHECK_ERROR(push_item_string(txObj, NONE_STRING, strlen(NONE_STRING)));
         CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
         return parser_ok;
     }
@@ -406,10 +402,10 @@ parser_error_t schema_display_vec(parser_context_t *ctx, parser_tx_t *txObj) {
 
     schema_vec_t vec_type = {0};
     vec_type.len = vec_len;
+    CHECK_ERROR(read_link(&txObj->merkle_proofs.leaves.data, &vec_type.value));
+    CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
 
     for (uint32_t i = 0; i < vec_len; i++) {
-        CHECK_ERROR(read_link(&txObj->merkle_proofs.leaves.data, &vec_type.value));
-        CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
         CHECK_ERROR(append_item_title_index(i));
         switch (vec_type.value.tag) {
             case LINK_BY_INDEX:

@@ -87,9 +87,10 @@ static parser_error_t checkSanity(uint8_t numItems, uint8_t displayIdx) {
     return parser_ok;
 }
 
-parser_error_t page_title(char *outKey, uint16_t outKeyLen, const char *inValue) {
+parser_error_t page_title(const parser_tx_t *txObj, char *outKey, uint16_t outKeyLen, const char *title,
+                          primitive_t *primitive, parser_context_t *data_context) {
     CHECK_INPUT(outKey);
-    CHECK_INPUT(inValue);
+    CHECK_INPUT(title);
 
     if (outKeyLen == 0) {
         return parser_ui_buffer_too_small;
@@ -99,19 +100,24 @@ parser_error_t page_title(char *outKey, uint16_t outKeyLen, const char *inValue)
     MEMZERO(outKey, outKeyLen);
 
     clear_item_title_buffer();
-    init_item_title_buffer(inValue);
+    if (strlen(title) > 0) {
+        init_item_title_buffer(title);
+        uint8_t items_qty = 0;
+        CHECK_ERROR(get_title_item_qty(&items_qty))
 
-    uint8_t items_qty = 0;
-    CHECK_ERROR(get_title_item_qty(&items_qty))
+        if (items_qty == 0) {
+            return parser_ui_item_title_empty;
+        }
 
-    if (items_qty == 0) {
-        return parser_ui_item_title_empty;
-    }
-
-    CHECK_ERROR(create_item_title(items_qty - 1, items_qty, outKey, outKeyLen));
-    if (strlen(outKey) <= 1 && items_qty > 1) {
-        MEMZERO(outKey, outKeyLen);
-        CHECK_ERROR(create_item_title(items_qty - 2, items_qty, outKey, outKeyLen));
+        CHECK_ERROR(create_item_title(items_qty - 1, items_qty, outKey, outKeyLen));
+        if (strlen(outKey) <= 1 && items_qty > 1) {
+            MEMZERO(outKey, outKeyLen);
+            CHECK_ERROR(create_item_title(items_qty - 2, items_qty, outKey, outKeyLen));
+        }
+    } else {
+        char ui_data_buffer[200] = {0};
+        CHECK_ERROR(render_primitive(data_context, txObj, primitive, ui_data_buffer, sizeof(ui_data_buffer)));
+        strncpy(outKey, ui_data_buffer, outKeyLen);
     }
 
     return parser_ok;
@@ -194,7 +200,9 @@ parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
-    CHECK_ERROR(page_title(outKey, outKeyLen, txObj->ui_items_new.items[displayIdx].title))
+    CHECK_ERROR(page_title(txObj, outKey, outKeyLen, txObj->ui_items_new.items[displayIdx].title,
+                           &txObj->ui_items_new.items[displayIdx].primitive,
+                           &txObj->ui_items_new.items[displayIdx].data_context))
     CHECK_ERROR(page_item(txObj, outVal, outValLen, txObj->ui_items_new.items[displayIdx].title,
                           &txObj->ui_items_new.items[displayIdx].primitive,
                           &txObj->ui_items_new.items[displayIdx].data_context, pageIdx, pageCount))
