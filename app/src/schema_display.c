@@ -306,11 +306,6 @@ parser_error_t schema_display_tuple(parser_context_t *ctx, parser_tx_t *txObj) {
         if (show_field) {
             if (tuple_type.has_show_as || tuple_type.has_structured_show_as) {
                 CHECK_ERROR(append_structured_show_as_title(&tuple_type.structured_show_as, i, &remove_title));
-            } else {
-                if (tuple_type.fields_qty > 1) {
-                    CHECK_ERROR(append_item_title_index(i));
-                    remove_title = true;
-                }
             }
         }
 
@@ -415,7 +410,7 @@ parser_error_t schema_display_vec(parser_context_t *ctx, parser_tx_t *txObj) {
     for (uint32_t i = 0; i < vec_len; i++) {
         CHECK_ERROR(read_link(&txObj->merkle_proofs.leaves.data, &vec_type.value));
         CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
-
+        CHECK_ERROR(append_item_title_index(i));
         switch (vec_type.value.tag) {
             case LINK_BY_INDEX:
                 CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, vec_type.value.data.by_index));
@@ -428,6 +423,7 @@ parser_error_t schema_display_vec(parser_context_t *ctx, parser_tx_t *txObj) {
                 print_string("Vec field is not a link by index\n");
                 return parser_unexpected_type;
         }
+        CHECK_ERROR(remove_last_item_title())
     }
 
     return parser_ok;
