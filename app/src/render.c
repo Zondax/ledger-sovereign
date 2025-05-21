@@ -17,17 +17,89 @@
 #include "app_mode.h"
 #include "bech32.h"
 #include "borsh.h"
-#include "schema_display.h"
 #include "schema_helper.h"
 #include "schema_reader.h"
-#include "ui_utils.h"
+#include "schema_txn_parser.h"
 #include "zxerror.h"
 #include "zxformat.h"
 
 #define NONE_STRING "None"
 
-parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *input_token, char *outValue,
-                                  uint16_t outValueLen) {
+static parser_error_t uint128_to_str(uint64_t high, uint64_t low, char *out, uint16_t out_len) {
+    CHECK_INPUT(out);
+    if (out_len < U128_STR_MAX_LEN) return parser_value_out_of_range;
+
+    MEMZERO(out, out_len);
+    char *p = out;
+
+    if (high == 0 && low == 0) {
+        *(p++) = '0';
+        return parser_ok;
+    }
+
+    uint64_t temp_high = high;
+    uint64_t temp_low = low;
+
+    while (temp_high != 0 || temp_low != 0) {
+        if (p - out >= (out_len - 1)) return parser_value_out_of_range;
+
+        uint64_t quotient_high = 0;
+        uint64_t quotient_low = 0;
+        uint64_t remainder = 0;
+        uint64_t current;
+
+        current = temp_high;
+        quotient_high = current / 10;
+        remainder = current % 10;
+
+        current = (remainder << 32) | (temp_low >> 32);
+        uint64_t q = current / 10;
+        remainder = current % 10;
+        quotient_low = (q << 32);
+
+        current = (remainder << 32) | (temp_low & 0xFFFFFFFF);
+        q = current / 10;
+        remainder = current % 10;
+        quotient_low |= q;
+
+        *(p++) = (char)('0' + remainder);
+        temp_high = quotient_high;
+        temp_low = quotient_low;
+    }
+
+    while (p > out) {
+        p--;
+        char z = *out;
+        *out = *p;
+        *p = z;
+        out++;
+    }
+
+    return parser_ok;
+}
+
+static parser_error_t render_number(uint64_t high, uint64_t low, uint8_t decimalPlaces, const char *postfix,
+                                    const char *prefix, char *outValue, uint16_t outValueLen) {
+    CHECK_INPUT(outValue);
+    if (outValueLen < U128_STR_MAX_LEN) return parser_value_out_of_range;
+
+    CHECK_ERROR(uint128_to_str(high, low, outValue, outValueLen));
+
+    if (intstr_to_fpstr_inplace(outValue, outValueLen, decimalPlaces) == 0) {
+        return parser_unexpected_value;
+    }
+
+    if (z_str3join(outValue, outValueLen, prefix, postfix) != zxerr_ok) {
+        return parser_unexpected_buffer_end;
+    }
+
+    number_inplace_trimming(outValue, 1);
+
+    return parser_ok;
+}
+
+static parser_error_t find_name_registry(parser_tx_t *txObj, bytes_t *name, bytes_t *input_token, char *outValue,
+                                         uint16_t outValueLen) {
     CHECK_INPUT(txObj);
     CHECK_INPUT(name);
     CHECK_INPUT(input_token);
@@ -59,6 +131,8 @@ parser_error_t render_fixed_point(parser_context_t *ctx, fixed_point_display_t d
     CHECK_INPUT(ctx);
     CHECK_INPUT(outValue);
 
+    MEMZERO(outValue, outValueLen);
+
     switch (display.type) {
         case FIXED_POINT_DISPLAY_DECIMALS:
             // TODO: Implement me
@@ -71,7 +145,6 @@ parser_error_t render_fixed_point(parser_context_t *ctx, fixed_point_display_t d
             }
             uint8_t offset = ctx->buffer.ptr[ctx->offset + display.from_sibling_field.byte_offset];
 
-            MEMZERO(outValue, outValueLen);
             CHECK_ERROR(render_number(value.hi, value.lo, offset, "", "", outValue, outValueLen));
 
             return parser_ok;
@@ -84,6 +157,7 @@ parser_error_t render_primitive_integer(parser_context_t *ctx, integer_display_t
                                         uint16_t outValueLen) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(outValue);
+    MEMZERO(outValue, outValueLen);
 
     switch (display.type) {
         case INTEGER_DISPLAY_HEX:
@@ -91,19 +165,14 @@ parser_error_t render_primitive_integer(parser_context_t *ctx, integer_display_t
             print_string("render_primitive_integer IMPLEMENT ME 0");
             return parser_unexpected_type;
         case INTEGER_DISPLAY_DECIMAL:
-            MEMZERO(outValue, outValueLen);
-            print_u8("INTEGER_DISPLAY_DECIMAL: ", display.type);
             CHECK_ERROR(render_number(value.hi, value.lo, 0, "", "", outValue, outValueLen));
             break;
         case INTEGER_DISPLAY_FIXED_POINT:
-            print_u8("INTEGER_DISPLAY_FIXED_POINT: ", display.type);
             CHECK_ERROR(render_fixed_point(ctx, display.fixed_point, value, outValue, outValueLen));
             break;
         default:
             return parser_unexpected_type;
     }
-
-    print_u8("render_primitive_integer finished: ", display.type);
 
     return parser_ok;
 }
@@ -176,6 +245,8 @@ parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, prim
         return parser_ui_buffer_too_small;
     }
 
+    MEMZERO(outValue, outValueLen);
+
     switch (byte_array->display.type) {
         case BYTE_DISPLAY_HEX:
             // TODO: Implement me
@@ -192,7 +263,6 @@ parser_error_t render_byte_array(parser_context_t *ctx, parser_tx_t *txObj, prim
         case BYTE_DISPLAY_BECH32M: {
             char hrp[MAX_HRP_LEN + 1] = {0};
             MEMCPY(hrp, byte_array->display.bech32m.prefix.prefix.ptr, byte_array->display.bech32m.prefix.prefix.len);
-            MEMZERO(outValue, outValueLen);
             MAP_ZXERR_TO_PARSER_ERR(
                 bech32EncodeFromBytes(outValue, outValueLen, hrp, array.ptr, array.len, 1, BECH32_ENCODING_BECH32M));
             break;

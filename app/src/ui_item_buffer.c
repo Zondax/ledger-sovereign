@@ -20,7 +20,6 @@
 
 #include "borsh.h"
 #include "parser_common.h"
-#include "ui_utils.h"
 #include "zxerror.h"
 #include "zxformat.h"
 #include "zxmacros.h"

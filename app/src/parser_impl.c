@@ -17,8 +17,8 @@
 #include "parser_impl.h"
 
 #include "borsh.h"
-#include "schema_display.h"
 #include "schema_reader.h"
+#include "schema_txn_parser.h"
 #include "stack_manager.h"
 #include "zxerror.h"
 
@@ -80,32 +80,14 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "display index out of range";
         case parser_display_page_out_of_range:
             return "display page out of range";
-        case parser_too_many_schemes:
-            return "too many schemes";
-        case parser_too_many_variants:
-            return "too many variants";
-        case parser_too_many_fields:
-            return "too many fields";
         case parser_root_type_indices_overflow:
             return "root type indices overflow";
-        case parser_scheme_indices_overflow:
-            return "scheme indices overflow";
         case parser_unexpected_root_hash:
             return "unexpected root hash";
         case parser_unexpected_chain_hash:
             return "unexpected chain hash";
         case parser_schema_index_not_found:
             return "schema index not found";
-        case parser_scheme_named_link_index_overflow:
-            return "scheme named link index overflow";
-        case parser_scheme_unnamed_link_index_overflow:
-            return "scheme unnamed link index overflow";
-        case parser_scheme_unnamed_index_not_found:
-            return "scheme unnamed index not found";
-        case parser_scheme_variant_index_overflow:
-            return "scheme variant index overflow";
-        case parser_scheme_variant_index_not_found:
-            return "scheme variant index not found";
         case parser_scheme_discriminant_overflow:
             return "scheme discriminant overflow";
         case parser_name_registry_not_found:
@@ -115,9 +97,23 @@ const char *parser_getErrorDescription(parser_error_t err) {
         case parser_push_item_too_long:
             return "push item too long";
 
-        // UI errors
-        case parser_ui_item_data_empty:
-            return "item data empty";
+        // parser specific
+        case parser_schema_fixed_point_unknown_type:
+            return "fixed point unknown type";
+        case parser_schema_integer_display_unknown_type:
+            return "integer display unknown type";
+        case parser_schema_byte_display_unknown_type:
+            return "byte display unknown type";
+        case parser_schema_primitive_unknown_type:
+            return "primitive unknown type";
+        case parser_schema_linking_scheme_unknown_type:
+            return "linking scheme unknown type";
+        case parser_schema_link_unknown_type:
+            return "link unknown type";
+        case parser_schema_parser_txn_failed:
+            return "parser txn failed";
+
+        // ui specific
         case parser_ui_item_title_empty:
             return "item title empty";
         case parser_ui_open_bracket_not_found:

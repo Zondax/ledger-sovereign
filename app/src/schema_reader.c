@@ -38,8 +38,7 @@ parser_error_t read_fixed_point_display(parser_context_t *ctx, fixed_point_displ
             CHECK_ERROR(read_u64(ctx, (uint64_t *)&display->from_sibling_field.byte_offset));
             break;
         default:
-            print_string("fixed point display unknown!!!!");
-            return parser_no_data;
+            return parser_schema_fixed_point_unknown_type;
     }
 
     return parser_ok;
@@ -55,17 +54,15 @@ parser_error_t read_integer_display(parser_context_t *ctx, integer_display_t *di
     switch (display->type) {
         case INTEGER_DISPLAY_HEX:
             print_string("integer display hex");
-            break;
+            return parser_no_data;
         case INTEGER_DISPLAY_DECIMAL:
-            print_string("integer display decimal");
+            // nothing to do
             break;
         case INTEGER_DISPLAY_FIXED_POINT:
-            print_string("integer display fixed point");
             CHECK_ERROR(read_fixed_point_display(ctx, &display->fixed_point));
             break;
         default:
-            print_string("integer display unknown!!!!");
-            return parser_no_data;
+            return parser_schema_integer_display_unknown_type;
     }
     return parser_ok;
 }
@@ -93,24 +90,21 @@ parser_error_t read_byte_display(parser_context_t *ctx, byte_display_t *display)
     switch (display->type) {
         case BYTE_DISPLAY_HEX:
             print_string("byte display hex");
-            break;
+            return parser_no_data;
         case BYTE_DISPLAY_DECIMAL:
             print_string("byte display decimal");
-            break;
+            return parser_no_data;
         case BYTE_DISPLAY_BECH32:
-            print_string("byte display bech32");
             CHECK_ERROR(read_hrp(ctx, &display->bech32.prefix));
             break;
         case BYTE_DISPLAY_BECH32M:
-            print_string("byte display bech32m");
             CHECK_ERROR(read_hrp(ctx, &display->bech32m.prefix));
             break;
         case BYTE_DISPLAY_BASE58:
             print_string("byte display base58");
-            break;
-        default:
-            print_string("byte display unknown!!!!");
             return parser_no_data;
+        default:
+            return parser_schema_byte_display_unknown_type;
     }
 
     return parser_ok;
@@ -234,8 +228,7 @@ parser_error_t read_immediate(parser_context_t *ctx, primitive_t *primitive) {
             print_string("Primitive skip");
             break;
         default:
-            print_string("link unknown!!!!");
-            return parser_no_data;
+            return parser_schema_primitive_unknown_type;
     }
     return parser_ok;
 }
@@ -256,9 +249,7 @@ parser_error_t read_link(parser_context_t *ctx, link_t *link) {
             CHECK_ERROR(read_immediate(ctx, &link->data.immediate));
             break;
         default:
-            // TODO: change this
-            print_string("link unknown!!!!");
-            return parser_no_data;
+            return parser_schema_link_unknown_type;
     }
 
     return parser_ok;
@@ -699,8 +690,7 @@ parser_error_t read_schema_type(parser_context_t *ctx, uint8_t type) {
             break;
         }
         default: {
-            print_u8("UNKNOWN TYPE:", type);
-            return parser_no_data;
+            return parser_schema_primitive_unknown_type;
         }
     }
 
@@ -732,12 +722,8 @@ parser_error_t metadata_read(parser_context_t *ctx, parser_tx_t *txObj) {
     txObj->schema.extra_metadata_hash.len = CX_SHA256_SIZE;
     CTX_CHECK_AND_ADVANCE(ctx, CX_SHA256_SIZE);
 
-    // TODO: check that we have consumed all data
     if (ctx->offset != ctx->buffer.len) {
-        print_string("Failed to parse metadata\n");
-        return parser_unexpected_error;
-    } else {
-        print_string("Successfully parsed metadata\n");
+        return parser_schema_parser_txn_failed;
     }
 
     return parser_ok;

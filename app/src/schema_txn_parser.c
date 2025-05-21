@@ -14,7 +14,7 @@
  *  limitations under the License.
  ********************************************************************************/
 
-#include "schema_display.h"
+#include "schema_txn_parser.h"
 
 #include "app_mode.h"
 #include "bech32.h"
@@ -22,7 +22,6 @@
 #include "schema_helper.h"
 #include "schema_reader.h"
 #include "ui_item_manager.h"
-#include "ui_utils.h"
 #include "zxerror.h"
 #include "zxformat.h"
 
@@ -93,7 +92,7 @@ parser_error_t schema_display_integer(parser_context_t *ctx, primitive_integer_t
             print_string("schema_display_integer IMPLEMENT ME 0");
             return parser_unexpected_type;
         case INTEGER_DISPLAY_DECIMAL:
-            print_string("schema_display_integer len += 0");
+            // nothing to do
             break;
         case INTEGER_DISPLAY_FIXED_POINT:
             switch (primitive->display.fixed_point.type) {
@@ -145,18 +144,15 @@ parser_error_t schema_display_primitive(parser_context_t *ctx, parser_tx_t *txOb
     CHECK_INPUT(ctx);
 
     uint16_t primitive_size = sizeof(primitive);
-    print_u16("Primitive size: ", primitive_size);
 
     parser_context_t ctx_to_push = {0};
     switch (primitive->type) {
         case PRIMITIVE_INTEGER:
             primitive_size = sizeof(primitive->integer);
-            print_u16("Primitive size integer_0: ", primitive_size);
             CHECK_ERROR(schema_display_integer(ctx, &primitive->integer, &ctx_to_push));
             break;
         case PRIMITIVE_BYTE_ARRAY:
             primitive_size = sizeof(primitive->byte_array);
-            print_u16("Primitive size byte_array: ", primitive_size);
             CHECK_ERROR(schema_display_byte_array(ctx, &primitive->byte_array, &ctx_to_push));
             break;
         case PRIMITIVE_BYTE_VEC:
@@ -180,8 +176,7 @@ parser_error_t schema_display_primitive(parser_context_t *ctx, parser_tx_t *txOb
             print_string("schema_display_primitive IMPLEMENT ME 4");
             return parser_unexpected_type;
         default:
-            print_u8("Unknown type: ", primitive->type);
-            return parser_unexpected_type;
+            return parser_schema_primitive_unknown_type;
     }
 
     CHECK_ERROR(push_item(txObj, primitive, &ctx_to_push));
@@ -271,8 +266,7 @@ parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) 
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &named_field.value.data.immediate));
                 break;
             default:
-                print_string("schema_display_struct IMPLEMENT ME 1");
-                return parser_unexpected_type;
+                return parser_schema_link_unknown_type;
         }
 
         if (remove_title) {
@@ -321,8 +315,7 @@ parser_error_t schema_display_tuple(parser_context_t *ctx, parser_tx_t *txObj) {
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &unnamed_field.value.data.immediate));
                 break;
             default:
-                print_string("Tuple field is not a link by index\n");
-                return parser_unexpected_type;
+                return parser_schema_link_unknown_type;
         }
 
         if (remove_title) {
@@ -357,8 +350,7 @@ parser_error_t schema_display_option(parser_context_t *ctx, parser_tx_t *txObj) 
             CHECK_ERROR(schema_display_primitive(ctx, txObj, &option_type.value.data.immediate));
             break;
         default:
-            print_string("Option field is not a link by index\n");
-            return parser_unexpected_type;
+            return parser_schema_link_unknown_type;
     }
 
     return parser_ok;
@@ -378,13 +370,11 @@ parser_error_t schema_display_array(parser_context_t *ctx, parser_tx_t *txObj) {
             case LINK_BY_INDEX:
                 CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, array_type.value.data.by_index));
                 break;
-            case LINK_IMMEDIATE: {
+            case LINK_IMMEDIATE:
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &array_type.value.data.immediate));
                 break;
-            }
             default:
-                print_string("Array field is not a link by index\n");
-                return parser_unexpected_type;
+                return parser_schema_link_unknown_type;
         }
 
         CHECK_ERROR(remove_last_item_title())
@@ -411,13 +401,11 @@ parser_error_t schema_display_vec(parser_context_t *ctx, parser_tx_t *txObj) {
             case LINK_BY_INDEX:
                 CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, vec_type.value.data.by_index));
                 break;
-            case LINK_IMMEDIATE: {
+            case LINK_IMMEDIATE:
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &vec_type.value.data.immediate));
                 break;
-            }
             default:
-                print_string("Vec field is not a link by index\n");
-                return parser_unexpected_type;
+                return parser_schema_link_unknown_type;
         }
         CHECK_ERROR(remove_last_item_title())
     }
@@ -462,9 +450,7 @@ parser_error_t schema_display_generic_by_index(parser_context_t *ctx, parser_tx_
             CHECK_ERROR(schema_display_vec(ctx, txObj));
             break;
         default:
-            print_u8("Unknown type: ", type);
-            CHECK_ERROR(schema_reset_leaf_offset(&txObj->merkle_proofs.leaves));
-            return parser_unexpected_type;
+            return parser_schema_linking_scheme_unknown_type;
     }
 
     return parser_ok;
