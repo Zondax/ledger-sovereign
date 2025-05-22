@@ -112,6 +112,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "link unknown type";
         case parser_schema_parser_txn_failed:
             return "parser txn failed";
+        case parser_schema_merkle_proofs_indices_mismatch:
+            return "merkle proofs indices mismatch";
 
         // ui specific
         case parser_ui_item_title_empty:

@@ -201,31 +201,27 @@ parser_error_t read_immediate(parser_context_t *ctx, primitive_t *primitive) {
     // read data
     switch (primitive->type) {
         case PRIMITIVE_INTEGER:
-            print_string("Primitive integer");
             CHECK_ERROR(read_primitive_integer(ctx, &primitive->integer));
             break;
         case PRIMITIVE_BYTE_ARRAY:
-            print_string("Primitive byte array");
             CHECK_ERROR(read_primitive_byte_array(ctx, &primitive->byte_array));
             break;
         case PRIMITIVE_BYTE_VEC:
-            print_string("Primitive byte vec");
             CHECK_ERROR(read_primitive_byte_vec(ctx, &primitive->byte_vec));
             break;
         case PRIMITIVE_FLOAT32:
             print_string("Primitive float32");
-            break;
+            return parser_no_data;
         case PRIMITIVE_FLOAT64:
             print_string("Primitive float64");
-            break;
+            return parser_no_data;
         case PRIMITIVE_STRING:
             print_string("Primitive string");
-            break;
+            return parser_no_data;
         case PRIMITIVE_BOOLEAN:
             print_string("Primitive boolean");
-            break;
+            return parser_no_data;
         case PRIMITIVE_SKIP:
-            print_string("Primitive skip");
             break;
         default:
             return parser_schema_primitive_unknown_type;
@@ -648,19 +644,19 @@ parser_error_t read_schema_type(parser_context_t *ctx, uint8_t type) {
         }
         case LINKING_SCHEME_FLOAT32: {
             print_string("READING FLOAT32");
-            break;
+            return parser_no_data;
         }
         case LINKING_SCHEME_FLOAT64: {
             print_string("READING FLOAT64");
-            break;
+            return parser_no_data;
         }
         case LINKING_SCHEME_STRING: {
             print_string("READING STRING");
-            break;
+            return parser_no_data;
         }
         case LINKING_SCHEME_BOOLEAN: {
             print_string("READING BOOLEAN");
-            break;
+            return parser_no_data;
         }
         case LINKING_SCHEME_SKIP: {
             uint64_t skip_type = 0;
@@ -784,7 +780,7 @@ parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txO
     // read indices
     CHECK_ERROR(read_u32(ctx, &txObj->merkle_proofs.indices.entries));
     if (txObj->merkle_proofs.indices.entries != txObj->merkle_proofs.leaves.entries) {
-        return parser_unexpected_error;
+        return parser_schema_merkle_proofs_indices_mismatch;
     }
     const uint8_t *ptr_mem_indices = ctx->buffer.ptr + ctx->offset;
     uint16_t offset_mem_indices = ctx->offset;

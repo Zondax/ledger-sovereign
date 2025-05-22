@@ -76,6 +76,7 @@ typedef enum {
     parser_schema_linking_scheme_unknown_type,
     parser_schema_link_unknown_type,
     parser_schema_parser_txn_failed,
+    parser_schema_merkle_proofs_indices_mismatch,
 
     // ui specific
     parser_ui_item_title_empty,
