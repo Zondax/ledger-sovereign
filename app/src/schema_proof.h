@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,26 +16,27 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "crypto_helper.h"
+#include "merkle_txdef.h"
+#include "parser_common.h"
+#include "parser_txdef.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <sigutils.h>
-#include <stdbool.h>
+typedef struct {
+    merkle_leaves_data_t leaves;
+    merkle_leaves_indices_t indices;
+    merkle_lemmas_t lemmas;
+    int64_t lemma_index;
+    uint64_t tree_size;
+} proof_t;
 
-#include "coin.h"
-#include "zxerror.h"
-#include "zxmacros.h"
-
-#define PUBKEY_SHA_LEN 28
-#define CX_SHA256_SIZE 32
-#define HRP "sov"
-
-zxerr_t crypto_sha256_init();
-zxerr_t crypto_sha256_update(const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_sha256_final(uint8_t *output);
-zxerr_t crypto_sha256_one_shot(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_computeAddress(uint8_t *address, uint16_t addressLen, const uint8_t *pubkey);
+parser_error_t get_single_root_hash(const merkle_proof_t *metadata, uint8_t metadataDigest[CX_SHA256_SIZE]);
+parser_error_t verify_merkle_proofs(const merkle_proof_t *metadata);
 
 #ifdef __cplusplus
 }

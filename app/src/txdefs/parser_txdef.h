@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2023 Zondax AG
+ *  (c) 2018 - 2023 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,29 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-
 #pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <sigutils.h>
-#include <stdbool.h>
+#include "schema_txdef.h"
+#include "ui_txdef.h"
 
-#include "coin.h"
-#include "zxerror.h"
-#include "zxmacros.h"
-
-#define PUBKEY_SHA_LEN 28
-#define CX_SHA256_SIZE 32
-#define HRP "sov"
-
-zxerr_t crypto_sha256_init();
-zxerr_t crypto_sha256_update(const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_sha256_final(uint8_t *output);
-zxerr_t crypto_sha256_one_shot(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_computeAddress(uint8_t *address, uint16_t addressLen, const uint8_t *pubkey);
+typedef struct {
+    schema_t schema;
+    merkle_proof_t merkle_proofs;
+    parser_context_t unsigned_transaction_raw;
+    ui_items_new_t ui_items_new;
+} parser_tx_t;
 
 #ifdef __cplusplus
 }

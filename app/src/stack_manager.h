@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2024 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,26 +16,28 @@
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "parser_common.h"
+#include "zxmacros.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <sigutils.h>
-#include <stdbool.h>
+/**
+ * @brief Checks the available stack space to prevent stack overflow.
+ *
+ * @return parser_error_t Returns parser_running_out_of_stack if stack space is insufficient, otherwise parser_ok.
+ */
+parser_error_t checkStack();
 
-#include "coin.h"
-#include "zxerror.h"
-#include "zxmacros.h"
-
-#define PUBKEY_SHA_LEN 28
-#define CX_SHA256_SIZE 32
-#define HRP "sov"
-
-zxerr_t crypto_sha256_init();
-zxerr_t crypto_sha256_update(const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_sha256_final(uint8_t *output);
-zxerr_t crypto_sha256_one_shot(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_computeAddress(uint8_t *address, uint16_t addressLen, const uint8_t *pubkey);
+/**
+ * @brief Frees the stack space by decrementing the recursion depth counter.
+ *
+ * @return parser_error_t Always returns parser_ok.
+ */
+parser_error_t freeStack(uint8_t depth);
 
 #ifdef __cplusplus
 }

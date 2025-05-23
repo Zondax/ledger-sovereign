@@ -44,6 +44,9 @@ typedef enum {
     parser_unexpected_type,
     parser_unexpected_method,
     parser_unexpected_buffer_end,
+    parser_encoding_failed,
+    parser_invalid_crypto_settings,
+    parser_ledger_api_error,
     parser_unexpected_value,
     parser_unexpected_number_items,
     parser_unexpected_version,
@@ -54,15 +57,29 @@ typedef enum {
     parser_invalid_address,
     parser_unexpected_chain,
     parser_missing_field,
-    paser_unknown_transaction,
-} parser_error_t;
+    parser_unknown_transaction,
+    parser_running_out_of_stack,
+    parser_root_type_indices_overflow,
+    parser_unexpected_root_hash,
+    parser_unexpected_chain_hash,
+    parser_schema_index_not_found,
+    parser_scheme_discriminant_overflow,
+    parser_name_registry_not_found,
+    parser_too_many_items,
+    parser_push_item_too_long,
 
-typedef struct {
-    const uint8_t *buffer;
-    uint16_t bufferLen;
-    uint16_t offset;
-    parser_tx_t *tx_obj;
-} parser_context_t;
+    // parser specific
+    parser_schema_unknown_type,
+    parser_schema_parser_txn_failed,
+    parser_schema_merkle_proofs_indices_mismatch,
+
+    // ui specific
+    parser_ui_item_title_empty,
+    parser_ui_separator_not_found,
+    parser_ui_buffer_not_initialized,
+    parser_ui_buffer_init_failed,
+    parser_ui_buffer_too_small,
+} parser_error_t;
 
 #ifdef __cplusplus
 }

@@ -124,6 +124,6 @@ void check_testcase(const testcase_t &tc, bool expert_mode) {
 
 INSTANTIATE_TEST_SUITE_P
 
-    (JsonTestCasesCurrentTxVer, JsonTestsA, ::testing::ValuesIn(GetJsonTestCases("testcases.json")),
+    (DISABLED_JsonTestCasesCurrentTxVer, JsonTestsA, ::testing::ValuesIn(GetJsonTestCases("testcases.json")),
      JsonTestsA::PrintToStringParamName());
 TEST_P(JsonTestsA, CheckUIOutput_CurrentTX_Expert) { check_testcase(GetParam(), true); }

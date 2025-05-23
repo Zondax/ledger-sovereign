@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,22 +20,14 @@
 extern "C" {
 #endif
 
-#include <sigutils.h>
-#include <stdbool.h>
+#include "parser_common.h"
 
-#include "coin.h"
-#include "zxerror.h"
-#include "zxmacros.h"
-
-#define PUBKEY_SHA_LEN 28
-#define CX_SHA256_SIZE 32
-#define HRP "sov"
-
-zxerr_t crypto_sha256_init();
-zxerr_t crypto_sha256_update(const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_sha256_final(uint8_t *output);
-zxerr_t crypto_sha256_one_shot(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen);
-zxerr_t crypto_computeAddress(uint8_t *address, uint16_t addressLen, const uint8_t *pubkey);
+bool schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec);
+parser_error_t schema_move_leaf_offset(merkle_leaves_data_t *leaves, uint64_t index);
+parser_error_t schema_reset_leaf_offset(merkle_leaves_data_t *leaves);
+parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type);
+parser_error_t schema_get_unsigned_transaction_index(parser_tx_t *txObj, uint64_t *root_index);
+bool is_link_skip(link_t *link);
 
 #ifdef __cplusplus
 }

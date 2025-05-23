@@ -16,12 +16,24 @@
 
 #include "parser_impl.h"
 
+#include "borsh.h"
+#include "schema_reader.h"
+// #include "schema_txn_parser.h"
+#include "stack_manager.h"
 #include "zxerror.h"
 
 parser_error_t _read(parser_context_t *c, parser_tx_t *v) {
-    UNUSED(c);
-    UNUSED(v);
-    // #{TODO} --> parse parameters: read from c->buffer and store in v
+    checkStack();
+
+    CHECK_ERROR(schema_merkle_proofs_read(c, v));
+    CHECK_ERROR(schema_extra_data_read(c, v));
+    // CHECK_ERROR(schema_parser_transaction(c, v));
+    CHECK_ERROR(schema_chain_hash_read(c, v));
+
+    if (c->offset != c->buffer.len) {
+        return parser_unexpected_error;
+    }
+
     return parser_ok;
 }
 
@@ -35,6 +47,16 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Initialized empty context";
         case parser_unexpected_buffer_end:
             return "Unexpected buffer end";
+        case parser_encoding_failed:
+            return "Encoding failed";
+        case parser_invalid_crypto_settings:
+            return "Invalid crypto settings";
+        case parser_ledger_api_error:
+            return "Ledger API error";
+        case parser_unexpected_type:
+            return "Unexpected type";
+        case parser_unexpected_method:
+            return "Unexpected method";
         case parser_unexpected_version:
             return "Unexpected version";
         case parser_unexpected_characters:
@@ -49,11 +71,51 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "Unexpected chain";
         case parser_missing_field:
             return "missing field";
+        case parser_unknown_transaction:
+            return "unknown transaction";
+        case parser_running_out_of_stack:
+            return "running out of stack";
 
         case parser_display_idx_out_of_range:
             return "display index out of range";
         case parser_display_page_out_of_range:
             return "display page out of range";
+        case parser_root_type_indices_overflow:
+            return "root type indices overflow";
+        case parser_unexpected_root_hash:
+            return "unexpected root hash";
+        case parser_unexpected_chain_hash:
+            return "unexpected chain hash";
+        case parser_schema_index_not_found:
+            return "schema index not found";
+        case parser_scheme_discriminant_overflow:
+            return "scheme discriminant overflow";
+        case parser_name_registry_not_found:
+            return "name registry not found";
+        case parser_too_many_items:
+            return "too many items";
+        case parser_push_item_too_long:
+            return "push item too long";
+
+        // parser specific
+        case parser_schema_unknown_type:
+            return "unknown type";
+        case parser_schema_parser_txn_failed:
+            return "parser txn failed";
+        case parser_schema_merkle_proofs_indices_mismatch:
+            return "merkle proofs indices mismatch";
+
+        // ui specific
+        case parser_ui_item_title_empty:
+            return "item title empty";
+        case parser_ui_separator_not_found:
+            return "separator not found";
+        case parser_ui_buffer_not_initialized:
+            return "buffer not initialized";
+        case parser_ui_buffer_init_failed:
+            return "buffer init failed";
+        case parser_ui_buffer_too_small:
+            return "buffer too small";
 
         default:
             return "Unrecognized error code";

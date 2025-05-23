@@ -19,17 +19,30 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
-#include <stdint.h>
+#include "common_txdef.h"
 
 typedef struct {
-    const uint8_t *ptr;
-    uint16_t len;
-} bytes_t;
+    uint32_t entries;
+    parser_context_t data;
+} merkle_leaves_data_t;
 
 typedef struct {
-    bytes_t tx_blind_signature;
-} parser_tx_t;
+    uint32_t entries;
+    parser_context_t indices;
+} merkle_leaves_indices_t;
+
+typedef struct {
+    uint32_t entries;
+    parser_context_t data;
+} merkle_lemmas_t;
+
+typedef struct {
+    merkle_leaves_data_t leaves;
+    merkle_leaves_indices_t indices;
+    merkle_lemmas_t lemmas;
+    uint64_t tree_size;
+    bytes_t root_hash;
+} merkle_proof_t;
 
 #ifdef __cplusplus
 }
