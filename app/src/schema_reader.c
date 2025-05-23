@@ -54,7 +54,7 @@ parser_error_t read_integer_display(parser_context_t *ctx, integer_display_t *di
     switch (display->type) {
         case INTEGER_DISPLAY_HEX:
             print_string("integer display hex");
-            return parser_no_data;
+            break;
         case INTEGER_DISPLAY_DECIMAL:
             // nothing to do
             break;
@@ -90,7 +90,7 @@ parser_error_t read_byte_display(parser_context_t *ctx, byte_display_t *display)
     switch (display->type) {
         case BYTE_DISPLAY_HEX:
             print_string("byte display hex");
-            return parser_no_data;
+            break;
         case BYTE_DISPLAY_DECIMAL:
             print_string("byte display decimal");
             return parser_no_data;
@@ -211,16 +211,16 @@ parser_error_t read_immediate(parser_context_t *ctx, primitive_t *primitive) {
             break;
         case PRIMITIVE_FLOAT32:
             print_string("Primitive float32");
-            return parser_no_data;
+            break;
         case PRIMITIVE_FLOAT64:
             print_string("Primitive float64");
-            return parser_no_data;
+            break;
         case PRIMITIVE_STRING:
             print_string("Primitive string");
-            return parser_no_data;
+            break;
         case PRIMITIVE_BOOLEAN:
             print_string("Primitive boolean");
-            return parser_no_data;
+            break;
         case PRIMITIVE_SKIP:
             break;
         default:
