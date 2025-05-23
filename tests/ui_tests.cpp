@@ -21,10 +21,8 @@
 #include <iostream>
 
 #include "app_mode.h"
-#include "bank_txdef.h"
 #include "gmock/gmock.h"
 #include "parser.h"
-#include "paymaster_txdef.h"
 #include "utils/common.h"
 
 using ::testing::TestWithParam;

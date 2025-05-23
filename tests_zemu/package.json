@@ -24,7 +24,7 @@
     "upgrade": "bunx npm-check-updates -i"
   },
   "dependencies": {
-    "@zondax/ledger-sovereign": "^0.0.2",
+    "@zondax/ledger-sovereign": "^0.0.3",
     "@zondax/zemu": "^0.55.3"
   },
   "devDependencies": {
