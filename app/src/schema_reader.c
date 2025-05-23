@@ -38,7 +38,7 @@ parser_error_t read_fixed_point_display(parser_context_t *ctx, fixed_point_displ
             CHECK_ERROR(read_u64(ctx, (uint64_t *)&display->from_sibling_field.byte_offset));
             break;
         default:
-            return parser_schema_fixed_point_unknown_type;
+            return parser_schema_unknown_type;
     }
 
     return parser_ok;
@@ -62,7 +62,7 @@ parser_error_t read_integer_display(parser_context_t *ctx, integer_display_t *di
             CHECK_ERROR(read_fixed_point_display(ctx, &display->fixed_point));
             break;
         default:
-            return parser_schema_integer_display_unknown_type;
+            return parser_schema_unknown_type;
     }
     return parser_ok;
 }
@@ -104,7 +104,7 @@ parser_error_t read_byte_display(parser_context_t *ctx, byte_display_t *display)
             print_string("byte display base58");
             return parser_no_data;
         default:
-            return parser_schema_byte_display_unknown_type;
+            return parser_schema_unknown_type;
     }
 
     return parser_ok;
@@ -224,7 +224,7 @@ parser_error_t read_immediate(parser_context_t *ctx, primitive_t *primitive) {
         case PRIMITIVE_SKIP:
             break;
         default:
-            return parser_schema_primitive_unknown_type;
+            return parser_schema_unknown_type;
     }
     return parser_ok;
 }
@@ -245,7 +245,7 @@ parser_error_t read_link(parser_context_t *ctx, link_t *link) {
             CHECK_ERROR(read_immediate(ctx, &link->data.immediate));
             break;
         default:
-            return parser_schema_link_unknown_type;
+            return parser_schema_unknown_type;
     }
 
     return parser_ok;
@@ -686,7 +686,7 @@ parser_error_t read_schema_type(parser_context_t *ctx, uint8_t type) {
             break;
         }
         default: {
-            return parser_schema_primitive_unknown_type;
+            return parser_schema_unknown_type;
         }
     }
 

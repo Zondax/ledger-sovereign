@@ -69,20 +69,13 @@ typedef enum {
     parser_push_item_too_long,
 
     // parser specific
-    parser_schema_fixed_point_unknown_type,
-    parser_schema_integer_display_unknown_type,
-    parser_schema_byte_display_unknown_type,
-    parser_schema_primitive_unknown_type,
-    parser_schema_linking_scheme_unknown_type,
-    parser_schema_link_unknown_type,
+    parser_schema_unknown_type,
     parser_schema_parser_txn_failed,
     parser_schema_merkle_proofs_indices_mismatch,
 
     // ui specific
     parser_ui_item_title_empty,
-    parser_ui_open_bracket_not_found,
-    parser_ui_close_bracket_not_found,
-    parser_ui_find_bracket_buffer_too_small,
+    parser_ui_separator_not_found,
     parser_ui_buffer_not_initialized,
     parser_ui_buffer_init_failed,
     parser_ui_buffer_too_small,

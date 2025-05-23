@@ -200,7 +200,7 @@ parser_error_t get_item_buffer_content(item_buffer_t *buffer, uint8_t index, cha
         while (*current && MEMCMP(current, buffer->separator_open, buffer->separator_open_len) != 0) {
             current++;
         }
-        if (*current == '\0') return parser_ui_open_bracket_not_found;
+        if (*current == '\0') return parser_ui_separator_not_found;
 
         if (i < index) {
             current++;
@@ -211,10 +211,10 @@ parser_error_t get_item_buffer_content(item_buffer_t *buffer, uint8_t index, cha
         while (*close && MEMCMP(close, buffer->separator_close, buffer->separator_close_len) != 0) {
             close++;
         }
-        if (*close == '\0') return parser_ui_close_bracket_not_found;
+        if (*close == '\0') return parser_ui_separator_not_found;
 
         size_t len = close - current - buffer->separator_open_len;
-        if (len >= content_len) return parser_ui_find_bracket_buffer_too_small;
+        if (len >= content_len) return parser_ui_buffer_too_small;
 
         strncpy(content, current + buffer->separator_open_len, len);
         content[len] = '\0';
@@ -235,7 +235,7 @@ parser_error_t get_item_buffer_content_length(item_buffer_t *buffer, uint8_t ind
         while (*current && MEMCMP(current, buffer->separator_open, buffer->separator_open_len) != 0) {
             current++;
         }
-        if (*current == '\0') return parser_ui_open_bracket_not_found;
+        if (*current == '\0') return parser_ui_separator_not_found;
 
         if (i < index) {
             current++;
@@ -246,7 +246,7 @@ parser_error_t get_item_buffer_content_length(item_buffer_t *buffer, uint8_t ind
         while (*close && MEMCMP(close, buffer->separator_close, buffer->separator_close_len) != 0) {
             close++;
         }
-        if (*close == '\0') return parser_ui_close_bracket_not_found;
+        if (*close == '\0') return parser_ui_separator_not_found;
 
         *length = close - current - buffer->separator_open_len;
         return parser_ok;

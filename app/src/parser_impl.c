@@ -98,18 +98,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
             return "push item too long";
 
         // parser specific
-        case parser_schema_fixed_point_unknown_type:
-            return "fixed point unknown type";
-        case parser_schema_integer_display_unknown_type:
-            return "integer display unknown type";
-        case parser_schema_byte_display_unknown_type:
-            return "byte display unknown type";
-        case parser_schema_primitive_unknown_type:
-            return "primitive unknown type";
-        case parser_schema_linking_scheme_unknown_type:
-            return "linking scheme unknown type";
-        case parser_schema_link_unknown_type:
-            return "link unknown type";
+        case parser_schema_unknown_type:
+            return "unknown type";
         case parser_schema_parser_txn_failed:
             return "parser txn failed";
         case parser_schema_merkle_proofs_indices_mismatch:
@@ -118,12 +108,8 @@ const char *parser_getErrorDescription(parser_error_t err) {
         // ui specific
         case parser_ui_item_title_empty:
             return "item title empty";
-        case parser_ui_open_bracket_not_found:
-            return "open bracket not found";
-        case parser_ui_close_bracket_not_found:
-            return "close bracket not found";
-        case parser_ui_find_bracket_buffer_too_small:
-            return "find bracket buffer too small";
+        case parser_ui_separator_not_found:
+            return "separator not found";
         case parser_ui_buffer_not_initialized:
             return "buffer not initialized";
         case parser_ui_buffer_init_failed:

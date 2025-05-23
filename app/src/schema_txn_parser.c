@@ -176,7 +176,7 @@ parser_error_t schema_display_primitive(parser_context_t *ctx, parser_tx_t *txOb
             print_string("schema_display_primitive IMPLEMENT ME 4");
             return parser_unexpected_type;
         default:
-            return parser_schema_primitive_unknown_type;
+            return parser_schema_unknown_type;
     }
 
     CHECK_ERROR(push_item(txObj, primitive, &ctx_to_push));
@@ -266,7 +266,7 @@ parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) 
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &named_field.value.data.immediate));
                 break;
             default:
-                return parser_schema_link_unknown_type;
+                return parser_schema_unknown_type;
         }
 
         if (remove_title) {
@@ -315,7 +315,7 @@ parser_error_t schema_display_tuple(parser_context_t *ctx, parser_tx_t *txObj) {
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &unnamed_field.value.data.immediate));
                 break;
             default:
-                return parser_schema_link_unknown_type;
+                return parser_schema_unknown_type;
         }
 
         if (remove_title) {
@@ -350,7 +350,7 @@ parser_error_t schema_display_option(parser_context_t *ctx, parser_tx_t *txObj) 
             CHECK_ERROR(schema_display_primitive(ctx, txObj, &option_type.value.data.immediate));
             break;
         default:
-            return parser_schema_link_unknown_type;
+            return parser_schema_unknown_type;
     }
 
     return parser_ok;
@@ -374,7 +374,7 @@ parser_error_t schema_display_array(parser_context_t *ctx, parser_tx_t *txObj) {
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &array_type.value.data.immediate));
                 break;
             default:
-                return parser_schema_link_unknown_type;
+                return parser_schema_unknown_type;
         }
 
         CHECK_ERROR(remove_last_item_title())
@@ -405,7 +405,7 @@ parser_error_t schema_display_vec(parser_context_t *ctx, parser_tx_t *txObj) {
                 CHECK_ERROR(schema_display_primitive(ctx, txObj, &vec_type.value.data.immediate));
                 break;
             default:
-                return parser_schema_link_unknown_type;
+                return parser_schema_unknown_type;
         }
         CHECK_ERROR(remove_last_item_title())
     }
@@ -450,7 +450,7 @@ parser_error_t schema_display_generic_by_index(parser_context_t *ctx, parser_tx_
             CHECK_ERROR(schema_display_vec(ctx, txObj));
             break;
         default:
-            return parser_schema_linking_scheme_unknown_type;
+            return parser_schema_unknown_type;
     }
 
     return parser_ok;

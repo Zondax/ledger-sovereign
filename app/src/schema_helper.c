@@ -145,7 +145,7 @@ parser_error_t find_bracket_content(const char *input, uint8_t index, char *cont
     const char *current = input;
     for (uint8_t i = 0; i <= index; i++) {
         current = strchr(current, '{');
-        if (current == NULL) return parser_ui_open_bracket_not_found;
+        if (current == NULL) return parser_ui_separator_not_found;
 
         if (i < index) {
             current++;
@@ -153,10 +153,10 @@ parser_error_t find_bracket_content(const char *input, uint8_t index, char *cont
         }
 
         const char *close = strchr(current, '}');
-        if (close == NULL) return parser_ui_close_bracket_not_found;
+        if (close == NULL) return parser_ui_separator_not_found;
 
         size_t len = close - current - 1;
-        if (len >= content_len) return parser_ui_find_bracket_buffer_too_small;
+        if (len >= content_len) return parser_ui_buffer_too_small;
 
         strncpy(content, current + 1, len);
         content[len] = '\0';
