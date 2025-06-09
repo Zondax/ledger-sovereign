@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *  (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ extern "C" {
 #define TOKEN_ID_SIZE 32
 #define ADDRESS_SIZE 28
 #define DEFAULT_SAFE_VEC_LEN 20
-#define MAX_RUNTIME_CALL_TYPE 15
 #define MAX_INPUT_CHUNK 256
 
 typedef enum {
@@ -51,8 +50,8 @@ typedef enum {
 } address_e;
 
 typedef struct {
-    uint64_t lo;
     uint64_t hi;
+    uint64_t lo;
 } uint128_t;
 
 typedef struct {

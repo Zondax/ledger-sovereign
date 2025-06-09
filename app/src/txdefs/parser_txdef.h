@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *  (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ extern "C" {
 
 typedef struct {
     schema_t schema;
-    merkle_proof_t merkle_proofs;
+    merkle_proof_t merkle_proof;
     parser_context_t unsigned_transaction_raw;
     ui_items_new_t ui_items_new;
 } parser_tx_t;

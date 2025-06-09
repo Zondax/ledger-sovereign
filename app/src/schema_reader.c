@@ -746,7 +746,7 @@ parser_error_t compute_chain_hash(parser_tx_t *txObj) {
     CHECK_ERROR(compute_internal_data_hash(txObj, internal_data_hash));
 
     crypto_sha256_init();
-    crypto_sha256_update(txObj->merkle_proofs.root_hash.ptr, txObj->merkle_proofs.root_hash.len);
+    crypto_sha256_update(txObj->merkle_proof.root_hash.ptr, txObj->merkle_proof.root_hash.len);
     crypto_sha256_update(internal_data_hash, CX_SHA256_SIZE);
     crypto_sha256_update(txObj->schema.extra_metadata_hash.ptr, txObj->schema.extra_metadata_hash.len);
     crypto_sha256_final(computed_chain_hash);
@@ -763,10 +763,10 @@ parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txO
     CHECK_INPUT(txObj);
 
     // read leaf data
-    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proofs.leaves.entries));
+    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proof.leaves.entries));
     const uint8_t *ptr_mem = ctx->buffer.ptr + ctx->offset;
     uint16_t offset_mem = ctx->offset;
-    for (uint32_t i = 0; i < txObj->merkle_proofs.leaves.entries; i++) {
+    for (uint32_t i = 0; i < txObj->merkle_proof.leaves.entries; i++) {
         uint32_t length = 0;
         CHECK_ERROR(read_u32(ctx, &length));
         uint8_t schema_type = 0;
@@ -774,38 +774,38 @@ parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txO
         CHECK_ERROR(read_schema_type(ctx, schema_type));
     }
 
-    txObj->merkle_proofs.leaves.data.buffer.ptr = ptr_mem;
-    txObj->merkle_proofs.leaves.data.buffer.len = ctx->offset - offset_mem;
+    txObj->merkle_proof.leaves.data.buffer.ptr = ptr_mem;
+    txObj->merkle_proof.leaves.data.buffer.len = ctx->offset - offset_mem;
 
     // read indices
-    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proofs.indices.entries));
-    if (txObj->merkle_proofs.indices.entries != txObj->merkle_proofs.leaves.entries) {
+    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proof.indices.entries));
+    if (txObj->merkle_proof.indices.entries != txObj->merkle_proof.leaves.entries) {
         return parser_schema_merkle_proofs_indices_mismatch;
     }
     const uint8_t *ptr_mem_indices = ctx->buffer.ptr + ctx->offset;
     uint16_t offset_mem_indices = ctx->offset;
-    for (uint32_t i = 0; i < txObj->merkle_proofs.indices.entries; i++) {
+    for (uint32_t i = 0; i < txObj->merkle_proof.indices.entries; i++) {
         uint64_t index = 0;
         CHECK_ERROR(read_u64(ctx, &index));
     }
-    txObj->merkle_proofs.indices.indices.buffer.ptr = ptr_mem_indices;
-    txObj->merkle_proofs.indices.indices.buffer.len = ctx->offset - offset_mem_indices;
+    txObj->merkle_proof.indices.indices.buffer.ptr = ptr_mem_indices;
+    txObj->merkle_proof.indices.indices.buffer.len = ctx->offset - offset_mem_indices;
 
     // read lemmas
-    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proofs.lemmas.entries));
-    txObj->merkle_proofs.lemmas.data.buffer.ptr = ctx->buffer.ptr + ctx->offset;
-    txObj->merkle_proofs.lemmas.data.buffer.len = txObj->merkle_proofs.lemmas.entries * 32;
-    CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proofs.lemmas.data.buffer.len);
+    CHECK_ERROR(read_u32(ctx, &txObj->merkle_proof.lemmas.entries));
+    txObj->merkle_proof.lemmas.data.buffer.ptr = ctx->buffer.ptr + ctx->offset;
+    txObj->merkle_proof.lemmas.data.buffer.len = txObj->merkle_proof.lemmas.entries * 32;
+    CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proof.lemmas.data.buffer.len);
 
     // read tree_size
-    CHECK_ERROR(read_u64(ctx, &txObj->merkle_proofs.tree_size));
+    CHECK_ERROR(read_u64(ctx, &txObj->merkle_proof.tree_size));
 
     // read root_hash
-    txObj->merkle_proofs.root_hash.ptr = ctx->buffer.ptr + ctx->offset;
-    txObj->merkle_proofs.root_hash.len = CX_SHA256_SIZE;
-    CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proofs.root_hash.len);
+    txObj->merkle_proof.root_hash.ptr = ctx->buffer.ptr + ctx->offset;
+    txObj->merkle_proof.root_hash.len = CX_SHA256_SIZE;
+    CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proof.root_hash.len);
 
-    CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proofs));
+    CHECK_ERROR(verify_merkle_proofs(&txObj->merkle_proof));
 
     return parser_ok;
 }

@@ -19,13 +19,15 @@
 #include "borsh.h"
 #include "schema_reader.h"
 /**
- * @brief Find an index in the indices array.
+ * @brief Find the position of a given index in the indices array.
  *
- * @param index The index to find.
- * @param indices The indices array.
- * @return bool True if the index is found, false otherwise.
+ * @param index_leaf The index value to search for.
+ * @param indices Pointer to the indices array structure.
+ * @param index_vec Output: position of the found index in the array (if found).
+ * @param found Output: set to true if the index is found, false otherwise.
+ * @return parser_error_t Error code indicating success or failure.
  */
-bool schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec) {
+parser_error_t schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec, bool *found) {
     CHECK_INPUT(indices);
     CHECK_INPUT(index_vec);
 
@@ -36,13 +38,15 @@ bool schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, ui
         if (index_tmp == index_leaf) {
             *index_vec = i;
             indices->indices.offset = 0;
-            return true;
+            *found = true;
+            return parser_ok;
         }
     }
 
     // reset offset
     indices->indices.offset = 0;
-    return false;
+    *found = false;
+    return parser_schema_index_not_found;
 }
 
 /**
@@ -77,30 +81,44 @@ parser_error_t schema_reset_leaf_offset(merkle_leaves_data_t *leaves) {
     return parser_ok;
 }
 
+/**
+ * @brief Get the schema type of a given index in the transaction.
+ *
+ * @param txObj Pointer to the transaction object.
+ * @param index The index to get the schema type for.
+ * @param type Output: the schema type of the index.
+ * @return parser_error_t Error code indicating success or failure.
+ */
 parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type) {
     CHECK_INPUT(txObj);
     CHECK_INPUT(type);
 
-    uint64_t mem_offset = txObj->merkle_proofs.leaves.data.offset;
-    txObj->merkle_proofs.leaves.data.offset = 0;
+    uint64_t mem_offset = txObj->merkle_proof.leaves.data.offset;
+    txObj->merkle_proof.leaves.data.offset = 0;
 
     uint64_t index_vec = 0;
-    if (!schema_find_index(index, &txObj->merkle_proofs.indices, &index_vec)) {
-        return parser_schema_index_not_found;
-    }
+    bool found = false;
+    CHECK_ERROR(schema_find_index(index, &txObj->merkle_proof.indices, &index_vec, &found));
 
-    CHECK_ERROR(schema_move_leaf_offset(&txObj->merkle_proofs.leaves, index_vec));
+    CHECK_ERROR(schema_move_leaf_offset(&txObj->merkle_proof.leaves, index_vec));
 
     uint32_t len = 0;
-    CHECK_ERROR(read_u32(&txObj->merkle_proofs.leaves.data, &len));
+    CHECK_ERROR(read_u32(&txObj->merkle_proof.leaves.data, &len));
 
-    CHECK_ERROR(read_u8(&txObj->merkle_proofs.leaves.data, type));
+    CHECK_ERROR(read_u8(&txObj->merkle_proof.leaves.data, type));
 
-    txObj->merkle_proofs.leaves.data.offset = mem_offset;
+    txObj->merkle_proof.leaves.data.offset = mem_offset;
 
     return parser_ok;
 }
 
+/**
+ * @brief Get the root index of the unsigned transaction.
+ *
+ * @param txObj Pointer to the transaction object.
+ * @param root_index Output: the root index of the unsigned transaction.
+ * @return parser_error_t Error code indicating success or failure.
+ */
 parser_error_t schema_get_unsigned_transaction_index(parser_tx_t *txObj, uint64_t *root_index) {
     CHECK_INPUT(txObj);
 
@@ -117,6 +135,12 @@ parser_error_t schema_get_unsigned_transaction_index(parser_tx_t *txObj, uint64_
     return parser_ok;
 }
 
+/**
+ * @brief Check if a link is a skip link.
+ *
+ * @param link Pointer to the link structure.
+ * @return bool True if the link is a skip link, false otherwise.
+ */
 bool is_link_skip(link_t *link) {
     if (link->tag == LINK_IMMEDIATE && link->data.immediate.type == PRIMITIVE_SKIP) {
         return true;

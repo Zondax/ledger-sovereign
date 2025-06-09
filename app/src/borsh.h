@@ -30,21 +30,10 @@ extern "C" {
 #define OFFSET_U32 4
 #define OFFSET_U64 8
 
-#define DEFINE_READ_UINT(bits)                                                              \
-    static inline parser_error_t read_u##bits(parser_context_t *ctx, uint##bits##_t *val) { \
-        CHECK_INPUT(ctx);                                                                   \
-        CHECK_INPUT(val);                                                                   \
-        *val = *(uint##bits##_t *)(ctx->buffer.ptr + ctx->offset);                          \
-        CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U##bits);                                         \
-        return parser_ok;                                                                   \
-    }
-
-DEFINE_READ_UINT(8)
-DEFINE_READ_UINT(16)
-DEFINE_READ_UINT(32)
-DEFINE_READ_UINT(64)
-
-#undef DEFINE_READ_UINT
+parser_error_t read_u8(parser_context_t *ctx, uint8_t *val);
+parser_error_t read_u16(parser_context_t *ctx, uint16_t *val);
+parser_error_t read_u32(parser_context_t *ctx, uint32_t *val);
+parser_error_t read_u64(parser_context_t *ctx, uint64_t *val);
 
 // TODO: Remove these functions
 // void print_buffer(bytes_t *buffer, const char *title);

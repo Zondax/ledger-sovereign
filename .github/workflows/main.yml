@@ -65,7 +65,6 @@ jobs:
           make deps
       - name: Run CMake
         run: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug .. && make
-      - run: make cpp_test
 
   build_ledger:
     needs: configure

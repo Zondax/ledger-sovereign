@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *  (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,11 +37,11 @@ typedef struct {
 } merkle_lemmas_t;
 
 typedef struct {
-    merkle_leaves_data_t leaves;
-    merkle_leaves_indices_t indices;
-    merkle_lemmas_t lemmas;
-    uint64_t tree_size;
-    bytes_t root_hash;
+    merkle_leaves_data_t leaves;      // The list of the original data items at the bottom level of the Merkle tree
+    merkle_leaves_indices_t indices;  // The list of indices of the leaves in the Merkle tree
+    merkle_lemmas_t lemmas;           // The list of hashes needed to reconstruct the Merkle root from the leaf
+    uint64_t tree_size;               // The size of the Merkle tree
+    bytes_t root_hash;                // The hash of the Merkle root
 } merkle_proof_t;
 
 #ifdef __cplusplus

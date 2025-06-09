@@ -13,10 +13,44 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+#include "borsh.h"
+
 #include "bech32.h"
 #include "crypto_helper.h"
 #include "parser_impl.h"
 #include "zxformat.h"
+
+parser_error_t read_u8(parser_context_t *ctx, uint8_t *val) {
+    CHECK_INPUT(ctx);
+    CHECK_INPUT(val);
+    *val = *(uint8_t *)(ctx->buffer.ptr + ctx->offset);
+    CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U8);
+    return parser_ok;
+}
+
+parser_error_t read_u16(parser_context_t *ctx, uint16_t *val) {
+    CHECK_INPUT(ctx);
+    CHECK_INPUT(val);
+    *val = *(uint16_t *)(ctx->buffer.ptr + ctx->offset);
+    CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U16);
+    return parser_ok;
+}
+
+parser_error_t read_u32(parser_context_t *ctx, uint32_t *val) {
+    CHECK_INPUT(ctx);
+    CHECK_INPUT(val);
+    *val = *(uint32_t *)(ctx->buffer.ptr + ctx->offset);
+    CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U32);
+    return parser_ok;
+}
+
+parser_error_t read_u64(parser_context_t *ctx, uint64_t *val) {
+    CHECK_INPUT(ctx);
+    CHECK_INPUT(val);
+    *val = *(uint64_t *)(ctx->buffer.ptr + ctx->offset);
+    CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U64);
+    return parser_ok;
+}
 
 // void print_buffer(bytes_t *buffer, const char *title) {
 // #if defined(LEDGER_SPECIFIC)

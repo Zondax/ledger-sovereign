@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2024 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -94,9 +94,11 @@ parser_error_t compute_tree_size(uint32_t num_right_siblings, uint32_t index_of_
 }
 
 /**
- * @brief Compute the hash of a leaf node in the proof.
+ * @brief Compute the hash of a leaf node at a given index in the leaves data.
  *
- * @param proof The proof structure containing the leaf node.
+ * @param leaves Pointer to the merkle_leaves_data_t structure containing the leaves data.
+ * @param index The index of the leaf to hash.
+ * @param hash Output buffer for the computed hash (must be at least CX_SHA256_SIZE bytes).
  * @return parser_error_t Error code indicating the result of the operation.
  */
 static parser_error_t hash_index_leaf(merkle_leaves_data_t *leaves, uint64_t index, uint8_t *hash) {
@@ -164,28 +166,32 @@ static parser_error_t get_next_lemma_hash(merkle_lemmas_t *lemmas, uint8_t *hash
 }
 
 /**
- * @brief Check if there are leaves in the range.
+ * @brief Check if there are leaves in the specified range.
  *
- * @param start The start index.
- * @param end The end index.
- * @param indices The indices array.
- * @return bool True if there are leaves in the range, false otherwise.
+ * @param start The start index (inclusive).
+ * @param end The end index (exclusive).
+ * @param indices Pointer to the merkle_leaves_indices_t structure containing the leaf indices.
+ * @param has_leaves Output pointer; set to true if there are leaves in the range, false otherwise.
+ * @return parser_error_t Error code indicating the result of the operation.
  */
-bool has_leaves(uint64_t start, uint64_t end, merkle_leaves_indices_t *indices) {
+static parser_error_t has_leaves(uint64_t start, uint64_t end, merkle_leaves_indices_t *indices, bool *has_leaves) {
     CHECK_INPUT(indices);
+    CHECK_INPUT(has_leaves);
 
     for (uint64_t i = 0; i < indices->entries; i++) {
         uint64_t index_tmp = 0;
         CHECK_ERROR(read_u64(&indices->indices, &index_tmp));
         if (index_tmp >= start && index_tmp < end) {
             indices->indices.offset = 0;
-            return true;
+            *has_leaves = true;
+            return parser_ok;
         }
     }
 
     // reset offset
     indices->indices.offset = 0;
-    return false;
+    *has_leaves = false;
+    return parser_ok;
 }
 
 /**
@@ -194,6 +200,7 @@ bool has_leaves(uint64_t start, uint64_t end, merkle_leaves_indices_t *indices) 
  * @param proof The proof structure containing the necessary data.
  * @param index_start The start index.
  * @param index_end The end index.
+ * @param hash Output buffer for the computed hash (must be at least CX_SHA256_SIZE bytes).
  * @return parser_error_t Error code indicating the result of the operation.
  */
 static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_start, uint64_t index_end, uint8_t *hash) {
@@ -207,9 +214,10 @@ static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_sta
     // If this is a single node, return the hash of the node
     if (index_end - index_start == 1) {
         uint64_t index_vec = 0;
-        if (schema_find_index(index_start, &proof->indices, &index_vec)) {
+        bool found = false;
+        CHECK_ERROR(schema_find_index(index_start, &proof->indices, &index_vec, &found));
+        if (found) {
             CHECK_ERROR(hash_index_leaf(&proof->leaves, index_vec, hash));
-
             return parser_ok;
         }
 
@@ -223,8 +231,10 @@ static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_sta
         return parser_unexpected_buffer_end;
     }
 
-    bool left_has_leaves = has_leaves(index_start, mid, &proof->indices);
-    bool right_has_leaves = has_leaves(mid, index_end, &proof->indices);
+    bool left_has_leaves = false;
+    bool right_has_leaves = false;
+    CHECK_ERROR(has_leaves(index_start, mid, &proof->indices, &left_has_leaves));
+    CHECK_ERROR(has_leaves(mid, index_end, &proof->indices, &right_has_leaves));
 
     // Check left subtree
     CHECK_ERROR(checkStack());
@@ -253,8 +263,8 @@ static parser_error_t verify_multiproof_inner(proof_t *proof, uint64_t index_sta
 /**
  * @brief Compute the root hash for a given metadata structure.
  *
- * @param metadata The metadata structure containing the necessary data.
- * @param metadataDigest The output buffer for the computed metadata digest.
+ * @param metadata Pointer to the merkle_proof_t structure containing the necessary data.
+ * @param hash Output buffer for the computed root hash (must be at least CX_SHA256_SIZE bytes).
  * @return parser_error_t Error code indicating the result of the operation.
  */
 parser_error_t get_root_hash(const merkle_proof_t *metadata, uint8_t *hash) {

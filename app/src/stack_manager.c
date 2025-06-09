@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2024 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ parser_error_t checkStack() {
     // NOLINTNEXTLINE(readability-identifier-length): here `p` is fine
     void *p = NULL;
     const uint32_t availableStack = (uint32_t)((void *)&p) + STACK_SHIFT - (uint32_t)&app_stack_canary;
-    ZEMU_LOGF(50, "Check: available stack: %d\n", availableStack)
     if (availableStack <= MINIMUM_STACK) {
         return parser_running_out_of_stack;
     }
@@ -53,6 +52,7 @@ parser_error_t checkStack() {
 
 /**
  * @brief Frees the stack space by decrementing the recursion depth counter.
+ * @param depth The depth of the stack to free.
  *
  * @return parser_error_t Always returns parser_ok.
  */
@@ -65,7 +65,6 @@ parser_error_t freeStack(uint8_t depth) {
     (void)depth;
     void *p = NULL;
     const uint32_t availableStack = (uint32_t)((void *)&p) - (uint32_t)&app_stack_canary;
-    ZEMU_LOGF(50, "Free: available stack: %d\n", availableStack)
     if (availableStack <= MINIMUM_STACK) {
         return parser_running_out_of_stack;
     }

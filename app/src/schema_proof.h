@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2024 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ typedef struct {
     uint64_t tree_size;
 } proof_t;
 
-parser_error_t get_single_root_hash(const merkle_proof_t *metadata, uint8_t metadataDigest[CX_SHA256_SIZE]);
 parser_error_t verify_merkle_proofs(const merkle_proof_t *metadata);
 
 #ifdef __cplusplus

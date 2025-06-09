@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ picohash_ctx_t ctx;
 
 zxerr_t crypto_sha256_init() {
 #if defined(LEDGER_SPECIFIC)
-    memset(&ctx, 0, sizeof(ctx));
+    MEMZERO(&ctx, sizeof(ctx));
     cx_sha256_init_no_throw(&ctx);
 #else
     picohash_init_sha256(&ctx);

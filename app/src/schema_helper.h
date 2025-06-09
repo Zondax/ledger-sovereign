@@ -22,7 +22,7 @@ extern "C" {
 
 #include "parser_common.h"
 
-bool schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec);
+parser_error_t schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec, bool *found);
 parser_error_t schema_move_leaf_offset(merkle_leaves_data_t *leaves, uint64_t index);
 parser_error_t schema_reset_leaf_offset(merkle_leaves_data_t *leaves);
 parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type);

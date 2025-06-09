@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2023 Zondax AG
+ *  (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,8 +37,10 @@ extern "C" {
     }
 
 #define CTX_CHECK_AND_ADVANCE(CTX, SIZE) \
-    CTX_CHECK((CTX), (SIZE))             \
-    (CTX)->offset += (SIZE);
+    {                                    \
+        CTX_CHECK((CTX), (SIZE))         \
+        (CTX)->offset += (SIZE);         \
+    }
 
 #define MAP_ZXERR_TO_PARSER_ERR(zxerr)                                           \
     ((zxerr) == zxerr_ok                        ? parser_ok                      \
