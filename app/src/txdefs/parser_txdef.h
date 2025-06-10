@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2025 Zondax AG
+ *  (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+#pragma once
 
-#include "actions.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-uint16_t action_addrResponseLen;
+#include "schema_txdef.h"
+#include "ui_txdef.h"
+
+typedef struct {
+    schema_t schema;
+    merkle_proof_t merkle_proof;
+    parser_context_t unsigned_transaction_raw;
+    ui_items_new_t ui_items_new;
+} parser_tx_t;
+
+#ifdef __cplusplus
+}
+#endif

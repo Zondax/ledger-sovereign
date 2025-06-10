@@ -14,6 +14,29 @@
  *  limitations under the License.
  ********************************************************************************/
 
-#include "actions.h"
+#pragma once
 
-uint16_t action_addrResponseLen;
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "crypto_helper.h"
+#include "merkle_txdef.h"
+#include "parser_common.h"
+#include "parser_txdef.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef struct {
+    merkle_leaves_data_t leaves;
+    merkle_leaves_indices_t indices;
+    merkle_lemmas_t lemmas;
+    int64_t lemma_index;
+    uint64_t tree_size;
+} proof_t;
+
+parser_error_t verify_merkle_proofs(const merkle_proof_t *metadata);
+
+#ifdef __cplusplus
+}
+#endif

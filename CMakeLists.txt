@@ -1,5 +1,5 @@
 #*******************************************************************************
-#*   (c) 2018 -2024 Zondax AG
+#*   (c) 2018 - 2025 Zondax AG
 #*
 #*  Licensed under the Apache License, Version 2.0 (the "License");
 #*  you may not use this file except in compliance with the License.
@@ -138,6 +138,15 @@ file(GLOB_RECURSE LIB_SRC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/parser.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/parser_impl.c
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/crypto_helper.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_reader.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/borsh.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_proof.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_helper.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/schema_txn_parser.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_item_manager.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/ui_item_buffer.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/stack_manager.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/render.c
         )
 
 add_library(app_lib STATIC ${LIB_SRC})
@@ -147,6 +156,8 @@ target_include_directories(app_lib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/app/src/common
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/txdefs
+        ${CMAKE_CURRENT_SOURCE_DIR}/app/src/modules
         ${CMAKE_CURRENT_SOURCE_DIR}/deps/picohash
         )
 

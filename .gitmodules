@@ -7,3 +7,6 @@
 [submodule "deps/ledger-secure-sdk"]
 	path = deps/ledger-secure-sdk
 	url = https://github.com/LedgerHQ/ledger-secure-sdk.git
+[submodule "js"]
+	path = js
+	url = https://github.com/Zondax/ledger-sovereign-js.git

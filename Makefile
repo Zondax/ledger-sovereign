@@ -1,5 +1,5 @@
 #*******************************************************************************
-#*   (c) 2018 -2024 Zondax AG
+#*   (c) 2018 - 2025 Zondax AG
 #*
 #*  Licensed under the Apache License, Version 2.0 (the "License");
 #*  you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
 # BOLOS_SDK IS  DEFINED	 	We use the plain Makefile for Ledger
 # BOLOS_SDK NOT DEFINED		We use a containerized build approach
 
-TESTS_JS_PACKAGE = "@zondax/ledger-sovereign"
-TESTS_JS_DIR = $(CURDIR)/../ledger-sovereign-js
+# TESTS_JS_PACKAGE = "@zondax/ledger-sovereign"
+# TESTS_JS_DIR = $(CURDIR)/../ledger-sovereign-js
 
 ifeq ($(BOLOS_SDK),)
 # In this case, there is not predefined SDK and we run dockerized

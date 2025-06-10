@@ -14,6 +14,31 @@
  *  limitations under the License.
  ********************************************************************************/
 
-#include "actions.h"
+#pragma once
 
-uint16_t action_addrResponseLen;
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "parser_common.h"
+#include "zxmacros.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Checks the available stack space to prevent stack overflow.
+ *
+ * @return parser_error_t Returns parser_running_out_of_stack if stack space is insufficient, otherwise parser_ok.
+ */
+parser_error_t checkStack();
+
+/**
+ * @brief Frees the stack space by decrementing the recursion depth counter.
+ *
+ * @return parser_error_t Always returns parser_ok.
+ */
+parser_error_t freeStack(uint8_t depth);
+
+#ifdef __cplusplus
+}
+#endif

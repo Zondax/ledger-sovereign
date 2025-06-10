@@ -1,6 +1,6 @@
 #*******************************************************************************
 #  Ledger App
-#  (c) 2018 - 2024 Zondax AG
+#  (c) 2018 - 2025 Zondax AG
 #  (c) 2017 Ledger
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -76,6 +76,7 @@ VARIANT_PARAM=COIN
 VARIANT_VALUES=$(COIN)
 
 INCLUDES_PATH += $(CURDIR)/src/common
+INCLUDES_PATH += $(BOLOS_SDK)/lib_cxng/src
 
 ########################################
 # Application communication interfaces #

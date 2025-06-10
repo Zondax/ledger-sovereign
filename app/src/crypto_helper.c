@@ -1,5 +1,5 @@
 /*******************************************************************************
- *   (c) 2018 - 2023 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,12 +19,42 @@
 #include "zxformat.h"
 #if defined(LEDGER_SPECIFIC)
 #include "cx.h"
+#include "cx_sha256.h"
+cx_sha256_t ctx;
 #else
 #include "picohash.h"
-#define CX_SHA256_SIZE 32
+picohash_ctx_t ctx;
 #endif
 
-zxerr_t crypto_computeSha256(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen) {
+zxerr_t crypto_sha256_init() {
+#if defined(LEDGER_SPECIFIC)
+    MEMZERO(&ctx, sizeof(ctx));
+    cx_sha256_init_no_throw(&ctx);
+#else
+    picohash_init_sha256(&ctx);
+#endif
+    return zxerr_ok;
+}
+
+zxerr_t crypto_sha256_update(const uint8_t *input, uint16_t inputLen) {
+#if defined(LEDGER_SPECIFIC)
+    CHECK_CX_OK(cx_sha256_update(&ctx, input, inputLen));
+#else
+    picohash_update(&ctx, input, inputLen);
+#endif
+    return zxerr_ok;
+}
+
+zxerr_t crypto_sha256_final(uint8_t *output) {
+#if defined(LEDGER_SPECIFIC)
+    CHECK_CX_OK(cx_sha256_final(&ctx, output));
+#else
+    picohash_final(&ctx, output);
+#endif
+    return zxerr_ok;
+}
+
+zxerr_t crypto_sha256_one_shot(uint8_t *output, uint16_t outputLen, const uint8_t *input, uint16_t inputLen) {
     if (output == NULL || outputLen == 0 || input == NULL) {
         return zxerr_invalid_crypto_settings;
     }
@@ -35,14 +65,10 @@ zxerr_t crypto_computeSha256(uint8_t *output, uint16_t outputLen, const uint8_t 
 
     MEMZERO(output, outputLen);
 
-#if defined(LEDGER_SPECIFIC)
-    cx_hash_sha256(input, inputLen, output, outputLen);
-#else
-    picohash_ctx_t ctx;
-    picohash_init_sha256(&ctx);
-    picohash_update(&ctx, input, inputLen);
-    picohash_final(&ctx, output);
-#endif
+    CHECK_ZXERR(crypto_sha256_init());
+    CHECK_ZXERR(crypto_sha256_update(input, inputLen));
+    CHECK_ZXERR(crypto_sha256_final(output));
+
     return zxerr_ok;
 }
 
@@ -59,7 +85,7 @@ zxerr_t crypto_computeAddress(uint8_t *address, uint16_t addressLen, const uint8
     MEMZERO(address, addressLen);
 
     uint8_t sha[PK_LEN_25519] = {0};
-    CHECK_ZXERR(crypto_computeSha256(sha, sizeof(sha), pubkey, PK_LEN_25519));
+    CHECK_ZXERR(crypto_sha256_one_shot(sha, sizeof(sha), pubkey, PK_LEN_25519));
     CHECK_ZXERR(
         bech32EncodeFromBytes((char *)address, ADDRESS_MAX_LENGTH, HRP, sha, PUBKEY_SHA_LEN, 1, BECH32_ENCODING_BECH32M));
 
