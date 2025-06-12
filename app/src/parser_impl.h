@@ -52,7 +52,6 @@ extern "C" {
      : (zxerr) == zxerr_ledger_api_error        ? parser_ledger_api_error        \
                                                 : parser_unexpected_error)
 
-// #{TODO} --> functions to parse, get, process transaction fields
 parser_error_t _read(parser_context_t *c, parser_tx_t *v);
 
 #ifdef __cplusplus

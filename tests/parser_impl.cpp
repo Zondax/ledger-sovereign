@@ -14,8 +14,6 @@
  *  limitations under the License.
  ********************************************************************************/
 
-// #{TODO} --> Apply tests that check this app's encoding/libraries
-
 #include "parser_impl.h"
 
 #include <hexutils.h>
@@ -281,4 +279,18 @@ TEST(SCALE, MultiProofTest) {
     parseHexString(expected_hash, sizeof(expected_hash), "a43850ba5603f89c05080e14ff868fec09f35fbfaa3c28ad76258fbac95d7432");
 
     EXPECT_EQ(memcmp(tx_obj.schema.chain_hash.ptr, expected_hash, CX_SHA256_SIZE), 0) << "Chain hash mismatch";
+}
+
+TEST(SCALE, Fuzzer) {
+    parser_context_t ctx = {0};
+    parser_tx_t tx_obj = {0};
+    parser_error_t err;
+    uint8_t buffer[12000];
+    auto bufferLen = parseHexString(buffer, sizeof(buffer), "0a");
+
+    ctx.buffer.ptr = buffer;
+    ctx.buffer.len = bufferLen;
+
+    // err = parser_parse(&ctx, ctx.buffer.ptr, ctx.buffer.len, &tx_obj);
+    // EXPECT_EQ(err, parser_ok) << parser_getErrorDescription(err);
 }

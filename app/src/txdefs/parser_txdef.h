@@ -26,7 +26,7 @@ typedef struct {
     schema_t schema;
     merkle_proof_t merkle_proof;
     parser_context_t unsigned_transaction_raw;
-    ui_items_new_t ui_items_new;
+    ui_items_t ui_items;
 } parser_tx_t;
 
 #ifdef __cplusplus

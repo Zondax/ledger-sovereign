@@ -21,10 +21,13 @@
 #include <zxmacros.h>
 #include <zxtypes.h>
 
+#include "borsh.h"
 #include "coin.h"
 #include "crypto.h"
 #include "parser_common.h"
 #include "parser_impl.h"
+#include "render.h"
+#include "ui_item_manager.h"
 
 parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer, uint16_t bufferSize) {
     ctx->offset = 0;
@@ -43,32 +46,26 @@ parser_error_t parser_init_context(parser_context_t *ctx, const uint8_t *buffer,
 
 parser_error_t parser_parse(parser_context_t *ctx, const uint8_t *data, size_t dataLen, parser_tx_t *tx_obj) {
     CHECK_ERROR(parser_init_context(ctx, data, dataLen))
-    // tx_obj->tx_blind_signature.ptr = data;
-    // tx_obj->tx_blind_signature.len = dataLen;
-    // ctx->tx_obj = tx_obj;
     return _read(ctx, tx_obj);
 }
 
-parser_error_t parser_validate(parser_context_t *ctx) {
+parser_error_t parser_validate(parser_tx_t *txObj) {
     // Iterate through all items to check that all can be shown and are valid
     uint8_t numItems = 0;
-    CHECK_ERROR(parser_getNumItems(ctx, &numItems))
+    CHECK_ERROR(parser_getNumItems(txObj, &numItems))
 
     char tmpKey[40] = {0};
     char tmpVal[40] = {0};
 
     for (uint8_t idx = 0; idx < numItems; idx++) {
         uint8_t pageCount = 0;
-        CHECK_ERROR(parser_getItem(ctx, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
+        CHECK_ERROR(parser_getItem(txObj, idx, tmpKey, sizeof(tmpKey), tmpVal, sizeof(tmpVal), 0, &pageCount))
     }
     return parser_ok;
 }
 
-parser_error_t parser_getNumItems(const parser_context_t *ctx, uint8_t *num_items) {
-    // #{TODO} --> function to retrieve num Items
-    // *num_items = _getNumItems();
-    UNUSED(ctx);
-    *num_items = 2;
+parser_error_t parser_getNumItems(const parser_tx_t *txObj, uint8_t *num_items) {
+    *num_items = txObj->ui_items.qty;
     if (*num_items == 0) {
         return parser_unexpected_number_items;
     }
@@ -89,31 +86,125 @@ static parser_error_t checkSanity(uint8_t numItems, uint8_t displayIdx) {
     return parser_ok;
 }
 
-parser_error_t parser_getItem(const parser_context_t *ctx, uint8_t displayIdx, char *outKey, uint16_t outKeyLen,
-                              char *outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
+parser_error_t page_title(parser_tx_t *txObj, char *outKey, uint16_t outKeyLen, const char *title, primitive_t *primitive,
+                          parser_context_t *data_context) {
+    CHECK_INPUT(outKey);
+    CHECK_INPUT(title);
+
+    if (outKeyLen == 0) {
+        return parser_ui_buffer_too_small;
+    }
+    outKeyLen--;
+
+    MEMZERO(outKey, outKeyLen);
+
+    clear_item_title_buffer();
+    if (strlen(title) > 0) {
+        init_item_title_buffer(title);
+        uint8_t items_qty = 0;
+        CHECK_ERROR(get_title_item_qty(&items_qty))
+
+        if (items_qty == 0) {
+            return parser_ui_item_title_empty;
+        }
+
+        CHECK_ERROR(create_item_title(items_qty - 1, items_qty, outKey, outKeyLen));
+        if (strlen(outKey) <= 1 && items_qty > 1) {
+            MEMZERO(outKey, outKeyLen);
+            CHECK_ERROR(create_item_title(items_qty - 2, items_qty, outKey, outKeyLen));
+        }
+    } else {
+        char ui_data_buffer[200] = {0};
+        CHECK_ERROR(render_primitive(data_context, txObj, primitive, ui_data_buffer, sizeof(ui_data_buffer)));
+        strncpy(outKey, ui_data_buffer, outKeyLen);
+    }
+
+    return parser_ok;
+}
+
+static uint8_t calculate_page_count(const char *text, uint16_t maxCharsPerPage) {
+    uint8_t pageCount = (uint8_t)(strlen(text) / maxCharsPerPage);
+    if (strlen(text) % maxCharsPerPage > 0) {
+        pageCount++;
+    }
+    return pageCount;
+}
+
+parser_error_t page_item(parser_tx_t *txObj, char *outValue, uint16_t outValueLen, const char *title, primitive_t *primitive,
+                         parser_context_t *data_context, uint8_t pageIdx, uint8_t *pageCount) {
+    CHECK_INPUT(outValue);
+    CHECK_INPUT(title);
+    CHECK_INPUT(primitive);
+    CHECK_INPUT(data_context);
+    CHECK_INPUT(pageCount);
+
+    MEMZERO(outValue, outValueLen);
+    *pageCount = 0;
+
+    if (outValueLen == 0) {
+        return parser_ui_buffer_too_small;
+    }
+    outValueLen--;
+
+    clear_item_title_buffer();
+    init_item_title_buffer(title);
+
+    uint8_t items_qty = 0;
+    CHECK_ERROR(get_title_item_qty(&items_qty))
+
+    char ui_buffer[200] = {0};
+    uint8_t page_count_title = 0;
+    if (items_qty > 1) {
+        CHECK_ERROR(create_item_title(items_qty - 1, items_qty, ui_buffer, sizeof(ui_buffer)));
+        uint16_t ui_buffer_len = strlen(ui_buffer);
+        MEMZERO(ui_buffer, sizeof(ui_buffer));
+        if (ui_buffer_len == 1) {
+            if (items_qty > 2) {
+                CHECK_ERROR(create_item_title(0, items_qty - 2, ui_buffer, sizeof(ui_buffer)));
+                strncat(ui_buffer, ":", 1);
+            }
+        } else {
+            CHECK_ERROR(create_item_title(0, items_qty - 1, ui_buffer, sizeof(ui_buffer)));
+            strncat(ui_buffer, ":", 1);
+        }
+        page_count_title = calculate_page_count(ui_buffer, outValueLen);
+    }
+
+    uint8_t page_count_content = 0;
+    char ui_data_buffer[200] = {0};
+    CHECK_ERROR(render_primitive(data_context, txObj, primitive, ui_data_buffer, sizeof(ui_data_buffer)));
+    data_context->offset = 0;
+    page_count_content = calculate_page_count(ui_data_buffer, outValueLen);
+
+    uint8_t aux = 0;
+    if (pageIdx < page_count_title) {
+        pageString(outValue, outValueLen, ui_buffer, pageIdx, &aux);
+    } else {
+        pageString(outValue, outValueLen, ui_data_buffer, pageIdx - page_count_title, &aux);
+    }
+
+    *pageCount = page_count_title + page_count_content;
+
+    return parser_ok;
+}
+
+parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal,
+                              uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     UNUSED(pageIdx);
     *pageCount = 1;
     uint8_t numItems = 0;
-    CHECK_ERROR(parser_getNumItems(ctx, &numItems))
+    CHECK_ERROR(parser_getNumItems(txObj, &numItems))
     CHECK_APP_CANARY()
 
     CHECK_ERROR(checkSanity(numItems, displayIdx))
     cleanOutput(outKey, outKeyLen, outVal, outValLen);
 
-    switch (displayIdx) {
-        case 0:
-            // Display Item 0
-            snprintf(outKey, outKeyLen, "Blind");
-            snprintf(outVal, outValLen, "Signing");
-            return parser_ok;
-        case 1:
-            // Display Item 0
-            snprintf(outKey, outKeyLen, "Txn");
-            pageStringHex(outVal, outValLen, (char *)ctx->buffer.ptr, ctx->buffer.len, pageIdx, pageCount);
-            return parser_ok;
-        default:
-            break;
-    }
+    CHECK_ERROR(page_title((parser_tx_t *)txObj, outKey, outKeyLen, txObj->ui_items.items[displayIdx].title,
+                           (primitive_t *)&txObj->ui_items.items[displayIdx].primitive,
+                           (parser_context_t *)&txObj->ui_items.items[displayIdx].data_context))
+    CHECK_ERROR(page_item((parser_tx_t *)txObj, outVal, outValLen, txObj->ui_items.items[displayIdx].title,
+                          (primitive_t *)&txObj->ui_items.items[displayIdx].primitive,
+                          (parser_context_t *)&txObj->ui_items.items[displayIdx].data_context, pageIdx, pageCount))
 
-    return parser_display_idx_out_of_range;
+    return parser_ok;
 }

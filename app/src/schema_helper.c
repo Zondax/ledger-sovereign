@@ -147,3 +147,45 @@ bool is_link_skip(link_t *link) {
     }
     return false;
 }
+
+bool should_show_field(link_t *value, bool silent, bool field_is_expert, bool expert_mode) {
+    if (silent && is_link_skip(value)) {
+        return false;
+    }
+
+    if (field_is_expert && !expert_mode) {
+        return false;
+    }
+
+    return true;
+}
+
+parser_error_t find_bracket_content(const char *input, uint8_t index, char *content, uint16_t content_len) {
+    CHECK_INPUT(input);
+    CHECK_INPUT(content);
+
+    MEMZERO(content, content_len);
+
+    const char *current = input;
+    for (uint8_t i = 0; i <= index; i++) {
+        current = strchr(current, '{');
+        if (current == NULL) return parser_ui_separator_not_found;
+
+        if (i < index) {
+            current++;
+            continue;
+        }
+
+        const char *close = strchr(current, '}');
+        if (close == NULL) return parser_ui_separator_not_found;
+
+        size_t len = close - current - 1;
+        if (len >= content_len) return parser_ui_buffer_too_small;
+
+        strncpy(content, current + 1, len);
+        content[len] = '\0';
+        return parser_ok;
+    }
+
+    return parser_unexpected_value;
+}
