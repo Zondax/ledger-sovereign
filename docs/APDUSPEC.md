@@ -44,7 +44,7 @@ The general structure of commands and responses is as follows:
 
 ## Command definition
 
-### GET_VERSION
+### INS_GET_VERSION
 
 #### Command
 
@@ -58,14 +58,15 @@ The general structure of commands and responses is as follows:
 
 #### Response
 
-| Field   | Type     | Content          | Note                            |
-| ------- | -------- | ---------------- | ------------------------------- |
-| TEST    | byte (1) | Test Mode        | 0xFF means test mode is enabled |
-| MAJOR   | byte (2) | Version Major    | 0..65535                        |
-| MINOR   | byte (2) | Version Minor    | 0..65535                        |
-| PATCH   | byte (2) | Version Patch    | 0..65535                        |
-| LOCKED  | byte (1) | Device is locked |                                 |
-| SW1-SW2 | byte (2) | Return code      | see list of return codes        |
+| Field     | Type     | Content          | Note                              |
+| --------- | -------- | ---------------- | --------------------------------- |
+| TEST      | byte (1) | Test Mode        | `0xFF` means test mode is enabled |
+| MAJOR     | byte (2) | Version Major    | `0..65535`                        |
+| MINOR     | byte (2) | Version Minor    | `0..65535`                        |
+| PATCH     | byte (2) | Version Patch    | `0..65535`                        |
+| LOCKED    | byte (1) | Device is locked |                                   |
+| TARGET_ID | byte (4) | Target ID        |                                   |
+| SW1-SW2   | byte (2) | Return code      | See list of return codes          |
 
 ---
 

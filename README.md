@@ -179,7 +179,7 @@ Many of our integration tests expect the device to be configured with a known te
 
 - Enter your pin if necessary
 
-- Run `make dev_ca`. The device will receive a development certificate to avoid constant manual confirmations.
+- Run `make dev_caS2`. The device will receive a development certificate to avoid constant manual confirmations.
 
 
 ### Loading into your development device
