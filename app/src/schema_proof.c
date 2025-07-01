@@ -112,6 +112,13 @@ static parser_error_t hash_index_leaf(merkle_leaves_data_t *leaves, uint64_t ind
     uint32_t data_length = 0;
     CHECK_ERROR(read_u32(&leaves->data, &data_length));
 
+    // Bounds check to prevent buffer overflow
+    // Check for integer overflow and ensure we have enough bytes remaining
+    if (data_length == 0 || data_length > UINT32_MAX - leaves->data.offset ||
+        leaves->data.offset + data_length > leaves->data.buffer.len) {
+        return parser_unexpected_buffer_end;
+    }
+
     // Compute hash from entry and store it in proof->hash
     crypto_sha256_init();
     crypto_sha256_update(&LEAF_PREFIX, 1);
@@ -271,6 +278,10 @@ parser_error_t get_root_hash(const merkle_proof_t *metadata, uint8_t *hash) {
     CHECK_INPUT(metadata);
     CHECK_INPUT(hash);
 
+    if (metadata->lemmas.entries == 0) {
+        return parser_unexpected_buffer_end;
+    }
+
     proof_t proof = {0};
     proof.leaves = metadata->leaves;
     proof.lemmas = metadata->lemmas;
@@ -287,6 +298,12 @@ parser_error_t get_root_hash(const merkle_proof_t *metadata, uint8_t *hash) {
     return parser_ok;
 }
 
+/**
+ * @brief Verify the merkle proofs.
+ *
+ * @param metadata Pointer to the merkle_proof_t structure containing the necessary data.
+ * @return parser_error_t Error code indicating the result of the operation.
+ */
 parser_error_t verify_merkle_proofs(const merkle_proof_t *metadata) {
     CHECK_INPUT(metadata);
     CHECK_INPUT(metadata->root_hash.ptr);

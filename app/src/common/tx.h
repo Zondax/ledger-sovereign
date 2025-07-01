@@ -50,3 +50,11 @@ zxerr_t tx_getNumItems(uint8_t *num_items);
 /// Gets an specific item from the transaction (including paging)
 zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outValue, uint16_t outValueLen,
                    uint8_t pageIdx, uint8_t *pageCount);
+
+/// Get the transaction raw bytes
+/// \return
+const uint8_t *get_txn_raw();
+
+/// Get the transaction length
+/// \return
+uint16_t get_txn_len();

@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  (c) 2018 - 2025 Zondax AG
+ *   (c) 2018 - 2025 Zondax AG
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
+
 #pragma once
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "schema_txdef.h"
-#include "ui_txdef.h"
+#include "parser_common.h"
 
-typedef struct {
-    schema_t schema;
-    merkle_proof_t merkle_proof;
-    parser_context_t unsigned_transaction_raw;
-    ui_items_t ui_items;
-} parser_tx_t;
+parser_error_t render_primitive(parser_context_t *ctx, parser_tx_t *txObj, primitive_t *primitive, char *outValue,
+                                uint16_t outValueLen);
 
 #ifdef __cplusplus
 }

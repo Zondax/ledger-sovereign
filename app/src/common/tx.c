@@ -24,7 +24,7 @@
 #include "zxmacros.h"
 
 #if defined(TARGET_NANOX) || defined(TARGET_NANOS2) || defined(TARGET_STAX) || defined(TARGET_FLEX)
-#define RAM_BUFFER_SIZE 8192
+#define RAM_BUFFER_SIZE 4096
 #define FLASH_BUFFER_SIZE 16384
 #elif defined(TARGET_NANOS)
 #define RAM_BUFFER_SIZE 256
@@ -44,8 +44,8 @@ storage_t NV_CONST N_appdata_impl __attribute__((aligned(64)));
 #define N_appdata (*(NV_VOLATILE storage_t *)PIC(&N_appdata_impl))
 #endif
 
-static parser_tx_t tx_obj;
-static parser_context_t ctx_parsed_tx;
+static parser_tx_t tx_obj = {0};
+static parser_context_t ctx_parsed_tx = {0};
 
 void tx_initialize() {
     buffering_init(ram_buffer, sizeof(ram_buffer), (uint8_t *)N_appdata.buffer, sizeof(N_appdata.buffer));
@@ -70,7 +70,7 @@ const char *tx_parse() {
         return parser_getErrorDescription(err);
     }
 
-    err = parser_validate(&ctx_parsed_tx);
+    err = parser_validate(&tx_obj);
     CHECK_APP_CANARY()
 
     if (err != parser_ok) {
@@ -83,7 +83,7 @@ const char *tx_parse() {
 void tx_parse_reset() { MEMZERO(&tx_obj, sizeof(tx_obj)); }
 
 zxerr_t tx_getNumItems(uint8_t *num_items) {
-    parser_error_t err = parser_getNumItems(&ctx_parsed_tx, num_items);
+    parser_error_t err = parser_getNumItems(&tx_obj, num_items);
 
     if (err != parser_ok) {
         return zxerr_unknown;
@@ -102,8 +102,7 @@ zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *ou
         return zxerr_no_data;
     }
 
-    parser_error_t err =
-        parser_getItem(&ctx_parsed_tx, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
+    parser_error_t err = parser_getItem(&tx_obj, displayIdx, outKey, outKeyLen, outVal, outValLen, pageIdx, pageCount);
 
     // Convert error codes
     if (err == parser_no_data || err == parser_display_idx_out_of_range || err == parser_display_page_out_of_range)
@@ -113,3 +112,7 @@ zxerr_t tx_getItem(int8_t displayIdx, char *outKey, uint16_t outKeyLen, char *ou
 
     return zxerr_ok;
 }
+
+const uint8_t *get_txn_raw() { return tx_obj.unsigned_transaction_raw.buffer.ptr; }
+
+uint16_t get_txn_len() { return tx_obj.unsigned_transaction_raw.buffer.len; }

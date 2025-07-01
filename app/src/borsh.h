@@ -36,16 +36,16 @@ parser_error_t read_u32(parser_context_t *ctx, uint32_t *val);
 parser_error_t read_u64(parser_context_t *ctx, uint64_t *val);
 
 // TODO: Remove these functions
-// void print_buffer(bytes_t *buffer, const char *title);
-// void print_buffer_str(bytes_t *buffer, const char *title);
-// void print_buffer_u8(bytes_t *buffer, const char *title);
+void print_buffer(bytes_t *buffer, const char *title);
+void print_buffer_str(bytes_t *buffer, const char *title);
+void print_buffer_u8(bytes_t *buffer, const char *title);
 void print_string(const char *str);
-// void print_string_title(const char *str, const char *title);
-// void print_u8(const char *str, uint8_t val);
-// void print_u16(const char *str, uint16_t val);
-// void print_u32(const char *str, uint32_t val);
-// void print_u64(const char *str, uint64_t val);
-// void print_u64_hex(const char *str, uint64_t val);
+void print_string_title(const char *str, const char *title);
+void print_u8(const char *str, uint8_t val);
+void print_u16(const char *str, uint16_t val);
+void print_u32(const char *str, uint32_t val);
+void print_u64(const char *str, uint64_t val);
+void print_u64_hex(const char *str, uint64_t val);
 
 #ifdef __cplusplus
 }

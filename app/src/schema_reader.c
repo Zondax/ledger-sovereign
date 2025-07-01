@@ -16,6 +16,8 @@
 
 #include "schema_reader.h"
 
+#include <stdint.h>
+
 #include "borsh.h"
 #include "crypto_helper.h"
 #include "schema_helper.h"
@@ -115,14 +117,17 @@ parser_error_t read_structured_display_overrides(parser_context_t *ctx, structur
     CHECK_INPUT(ctx);
 
     // read has_title_elements
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&display->has_title_elements));
+    uint8_t tmp = 0;
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    display->has_title_elements = (tmp != 0);
     if (display->has_title_elements) {
         // read title_elements
         CHECK_ERROR(read_u64(ctx, (uint64_t *)&display->title_elements));
     }
 
     // read has_title_lines
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&display->has_title_lines));
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    display->has_title_lines = (tmp != 0);
     if (display->has_title_lines) {
         // read title_lines
         CHECK_ERROR(read_u64(ctx, (uint64_t *)&display->title_lines));
@@ -155,7 +160,9 @@ parser_error_t read_primitive_byte_array(parser_context_t *ctx, primitive_byte_a
     CHECK_ERROR(read_byte_display(ctx, &primitive->display));
 
     // read has_name_registry
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&primitive->has_name_registry));
+    uint8_t tmp = 0;
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    primitive->has_name_registry = (tmp != 0);
 
     // read name_registry
     if (primitive->has_name_registry) {
@@ -177,7 +184,9 @@ parser_error_t read_primitive_byte_vec(parser_context_t *ctx, primitive_byte_vec
     CHECK_ERROR(read_byte_display(ctx, &primitive->display));
 
     // read has_name_registry
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&primitive->has_name_registry));
+    uint8_t tmp = 0;
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    primitive->has_name_registry = (tmp != 0);
 
     // read name_registry
     if (primitive->has_name_registry) {
@@ -269,7 +278,9 @@ parser_error_t read_enum_variant(parser_context_t *ctx, enum_variant_t *variant)
     CHECK_ERROR(read_u8(ctx, (uint8_t *)&variant->hide_tag));
 
     // read has_value
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&variant->has_value));
+    uint8_t tmp = 0;
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    variant->has_value = (tmp != 0);
     if (variant->has_value) {
         // read value
         CHECK_ERROR(read_link(ctx, &variant->value));
@@ -374,7 +385,9 @@ parser_error_t read_struct(parser_context_t *ctx, schema_struct_t *schema_struct
     }
 
     // read has_show_as
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&schema_struct->has_show_as));
+    uint8_t tmp = 0;
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    schema_struct->has_show_as = (tmp != 0);
     if (schema_struct->has_show_as) {
         CHECK_ERROR(read_u32(ctx, (uint32_t *)&schema_struct->show_as.len));
         if (schema_struct->show_as.len == 0) {
@@ -387,7 +400,8 @@ parser_error_t read_struct(parser_context_t *ctx, schema_struct_t *schema_struct
     }
 
     // read has_structured_show_as
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&schema_struct->has_structured_show_as));
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    schema_struct->has_structured_show_as = (tmp != 0);
     if (schema_struct->has_structured_show_as) {
         CHECK_ERROR(read_u32(ctx, (uint32_t *)&schema_struct->structured_show_as.len));
         if (schema_struct->structured_show_as.len == 0) {
@@ -424,7 +438,9 @@ parser_error_t read_tuple(parser_context_t *ctx, schema_tuple_t *schema_tuple) {
     CHECK_INPUT(ctx);
 
     // read has_show_as
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&schema_tuple->has_show_as));
+    uint8_t tmp = 0;
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    schema_tuple->has_show_as = (tmp != 0);
     if (schema_tuple->has_show_as) {
         CHECK_ERROR(read_u32(ctx, (uint32_t *)&schema_tuple->show_as.len));
         if (schema_tuple->show_as.len == 0) {
@@ -437,7 +453,8 @@ parser_error_t read_tuple(parser_context_t *ctx, schema_tuple_t *schema_tuple) {
     }
 
     // read has_structured_show_as
-    CHECK_ERROR(read_u8(ctx, (uint8_t *)&schema_tuple->has_structured_show_as));
+    CHECK_ERROR(read_u8(ctx, &tmp));
+    schema_tuple->has_structured_show_as = (tmp != 0);
     if (schema_tuple->has_structured_show_as) {
         CHECK_ERROR(read_u32(ctx, (uint32_t *)&schema_tuple->structured_show_as.len));
         if (schema_tuple->structured_show_as.len == 0) {
@@ -762,6 +779,10 @@ parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txO
     CHECK_INPUT(ctx);
     CHECK_INPUT(txObj);
 
+    if (ctx->buffer.len < 4) {
+        return parser_no_data;
+    }
+
     // read leaf data
     CHECK_ERROR(read_u32(ctx, &txObj->merkle_proof.leaves.entries));
     const uint8_t *ptr_mem = ctx->buffer.ptr + ctx->offset;
@@ -793,6 +814,11 @@ parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txO
 
     // read lemmas
     CHECK_ERROR(read_u32(ctx, &txObj->merkle_proof.lemmas.entries));
+
+    if (txObj->merkle_proof.lemmas.entries > UINT16_MAX / 32) {
+        return parser_value_out_of_range;
+    }
+
     txObj->merkle_proof.lemmas.data.buffer.ptr = ctx->buffer.ptr + ctx->offset;
     txObj->merkle_proof.lemmas.data.buffer.len = txObj->merkle_proof.lemmas.entries * 32;
     CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proof.lemmas.data.buffer.len);

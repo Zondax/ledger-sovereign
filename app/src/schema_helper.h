@@ -28,6 +28,8 @@ parser_error_t schema_reset_leaf_offset(merkle_leaves_data_t *leaves);
 parser_error_t get_schema_type(parser_tx_t *txObj, uint32_t index, uint8_t *type);
 parser_error_t schema_get_unsigned_transaction_index(parser_tx_t *txObj, uint64_t *root_index);
 bool is_link_skip(link_t *link);
+bool should_show_field(link_t *value, bool silent, bool field_is_expert, bool expert_mode);
+parser_error_t find_bracket_content(const char *input, uint8_t index, char *content, uint16_t content_len);
 
 #ifdef __cplusplus
 }

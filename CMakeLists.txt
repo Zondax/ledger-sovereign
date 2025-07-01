@@ -87,15 +87,39 @@ if(ENABLE_FUZZING)
 endif()
 
 if(ENABLE_COVERAGE)
-    string(APPEND CMAKE_C_FLAGS " -fprofile-instr-generate -fcoverage-mapping")
-    string(APPEND CMAKE_CXX_FLAGS " -fprofile-instr-generate -fcoverage-mapping")
-    string(APPEND CMAKE_LINKER_FLAGS " -fprofile-instr-generate -fcoverage-mapping")
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/fuzz/coverage")
+    
+    string(APPEND CMAKE_C_FLAGS " -fprofile-instr-generate=fuzz/coverage/%p.profraw -fcoverage-mapping")
+    string(APPEND CMAKE_CXX_FLAGS " -fprofile-instr-generate=fuzz/coverage/%p.profraw -fcoverage-mapping")
+    string(APPEND CMAKE_LINKER_FLAGS " -fprofile-instr-generate=fuzz/coverage/%p.profraw -fcoverage-mapping")
 endif()
 
 if(ENABLE_SANITIZERS)
-    string(APPEND CMAKE_C_FLAGS " -fsanitize=address,undefined -fsanitize-recover=address,undefined")
-    string(APPEND CMAKE_CXX_FLAGS " -fsanitize=address,undefined -fsanitize-recover=address,undefined")
-    string(APPEND CMAKE_LINKER_FLAGS " -fsanitize=address,undefined -fsanitize-recover=address,undefined")
+    string(APPEND CMAKE_C_FLAGS " -fsanitize=address,undefined")
+    string(APPEND CMAKE_CXX_FLAGS " -fsanitize=address,undefined")
+    string(APPEND CMAKE_LINKER_FLAGS " -fsanitize=address,undefined")
+    
+    string(APPEND CMAKE_C_FLAGS " -fsanitize-recover=address,undefined")
+    string(APPEND CMAKE_CXX_FLAGS " -fsanitize-recover=address,undefined")
+    string(APPEND CMAKE_LINKER_FLAGS " -fsanitize-recover=address,undefined")
+    
+    string(APPEND CMAKE_C_FLAGS " -fsanitize-address-use-after-scope")
+    string(APPEND CMAKE_CXX_FLAGS " -fsanitize-address-use-after-scope")
+    string(APPEND CMAKE_LINKER_FLAGS " -fsanitize-address-use-after-scope")
+    
+    string(APPEND CMAKE_C_FLAGS " -fsanitize=integer -fsanitize=bounds")
+    string(APPEND CMAKE_CXX_FLAGS " -fsanitize=integer -fsanitize=bounds")
+    string(APPEND CMAKE_LINKER_FLAGS " -fsanitize=integer -fsanitize=bounds")
+
+    string(APPEND CMAKE_C_FLAGS " -fstack-protector-strong")
+    string(APPEND CMAKE_CXX_FLAGS " -fstack-protector-strong")
+
+    # Disable sanitizers for crypto_helper.c as it uses picohash, which triggers many sanitizer warnings.
+    # This is a workaround to allow using sanitizers for the rest of the codebase during fuzzing.
+    set_property(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/app/src/crypto_helper.c
+        APPEND PROPERTY
+        COMPILE_FLAGS "-fno-sanitize=address,undefined,integer,bounds"
+    )
 endif()
 
 set (RETRIEVE_MAJOR_CMD

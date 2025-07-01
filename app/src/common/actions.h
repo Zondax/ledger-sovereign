@@ -19,7 +19,9 @@
 #include <stdint.h>
 
 #include "apdu_codes.h"
+#include "borsh.h"
 #include "coin.h"
+#include "common_txdef.h"
 #include "crypto.h"
 #include "tx.h"
 #include "zxerror.h"
@@ -41,8 +43,8 @@ __Z_INLINE zxerr_t app_fill_address() {
 }
 
 __Z_INLINE void app_sign() {
-    const uint8_t *message = tx_get_buffer();
-    const uint16_t messageLength = tx_get_buffer_length();
+    const uint8_t *message = get_txn_raw();
+    const uint16_t messageLength = get_txn_len() + CX_SHA256_SIZE;
 
     const zxerr_t err = crypto_sign(G_io_apdu_buffer, IO_APDU_BUFFER_SIZE - 3, message, messageLength);
 

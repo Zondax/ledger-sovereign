@@ -20,11 +20,11 @@
 #include <sstream>
 #include <string>
 
-std::vector<std::string> dumpUI(parser_context_t *ctx, uint16_t maxKeyLen, uint16_t maxValueLen) {
+std::vector<std::string> dumpUI(parser_tx_t *txObj, uint16_t maxKeyLen, uint16_t maxValueLen) {
     auto answer = std::vector<std::string>();
 
     uint8_t numItems;
-    parser_error_t err = parser_getNumItems(ctx, &numItems);
+    parser_error_t err = parser_getNumItems(txObj, &numItems);
     if (err != parser_ok) {
         return answer;
     }
@@ -38,7 +38,7 @@ std::vector<std::string> dumpUI(parser_context_t *ctx, uint16_t maxKeyLen, uint1
         while (pageIdx < pageCount) {
             std::stringstream ss;
 
-            err = parser_getItem(ctx, idx, keyBuffer, maxKeyLen, valueBuffer, maxValueLen, pageIdx, &pageCount);
+            err = parser_getItem(txObj, idx, keyBuffer, maxKeyLen, valueBuffer, maxValueLen, pageIdx, &pageCount);
 
             ss << idx << " | " << keyBuffer;
             if (pageCount > 1) {

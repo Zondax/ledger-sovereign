@@ -21,7 +21,7 @@
 #include "zxmacros.h"
 
 #if defined(LEDGER_SPECIFIC)
-#define STACK_SHIFT 0x20
+#define STACK_SHIFT 24
 #define MINIMUM_STACK 0x400
 #else
 static int16_t recursionDepthCounter = 0;

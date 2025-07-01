@@ -49,12 +49,12 @@ typedef struct {
     char title[MAX_STRING_LENGTH];
     primitive_t primitive;
     parser_context_t data_context;
-} ui_item_new_t;
+} ui_item_t;
 
 typedef struct {
     uint16_t qty;
-    ui_item_new_t items[MAX_ITEMS];
-} ui_items_new_t;
+    ui_item_t items[MAX_ITEMS];
+} ui_items_t;
 
 #ifdef __cplusplus
 }

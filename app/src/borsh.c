@@ -23,6 +23,9 @@
 parser_error_t read_u8(parser_context_t *ctx, uint8_t *val) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(val);
+    if (ctx->offset + OFFSET_U8 > ctx->buffer.len) {
+        return parser_unexpected_buffer_end;
+    }
     *val = *(uint8_t *)(ctx->buffer.ptr + ctx->offset);
     CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U8);
     return parser_ok;
@@ -31,7 +34,10 @@ parser_error_t read_u8(parser_context_t *ctx, uint8_t *val) {
 parser_error_t read_u16(parser_context_t *ctx, uint16_t *val) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(val);
-    *val = *(uint16_t *)(ctx->buffer.ptr + ctx->offset);
+    if (ctx->offset + OFFSET_U16 > ctx->buffer.len) {
+        return parser_unexpected_buffer_end;
+    }
+    MEMCPY(val, ctx->buffer.ptr + ctx->offset, sizeof(uint16_t));
     CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U16);
     return parser_ok;
 }
@@ -39,7 +45,10 @@ parser_error_t read_u16(parser_context_t *ctx, uint16_t *val) {
 parser_error_t read_u32(parser_context_t *ctx, uint32_t *val) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(val);
-    *val = *(uint32_t *)(ctx->buffer.ptr + ctx->offset);
+    if (ctx->offset + OFFSET_U32 > ctx->buffer.len) {
+        return parser_unexpected_buffer_end;
+    }
+    MEMCPY(val, ctx->buffer.ptr + ctx->offset, sizeof(uint32_t));
     CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U32);
     return parser_ok;
 }
@@ -47,108 +56,140 @@ parser_error_t read_u32(parser_context_t *ctx, uint32_t *val) {
 parser_error_t read_u64(parser_context_t *ctx, uint64_t *val) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(val);
-    *val = *(uint64_t *)(ctx->buffer.ptr + ctx->offset);
+    if (ctx->offset + OFFSET_U64 > ctx->buffer.len) {
+        return parser_unexpected_buffer_end;
+    }
+    MEMCPY(val, ctx->buffer.ptr + ctx->offset, sizeof(uint64_t));
     CTX_CHECK_AND_ADVANCE(ctx, OFFSET_U64);
     return parser_ok;
 }
 
-// void print_buffer(bytes_t *buffer, const char *title) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(50, "%s\n", title);
-//     char print[1000] = {0};
-//     array_to_hexstr(print, sizeof(print), buffer->ptr, buffer->len);
-//     ZEMU_LOGF(1000, "%s\n", print);
-// #else
-//     printf("%s %d: ", title, buffer->len);
-//     for (uint16_t i = 0; i < buffer->len; i++) {
-//         printf("%02x", buffer->ptr[i]);
-//     }
-//     printf("\n");
-// #endif
-// }
+void print_buffer(bytes_t *buffer, const char *title) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, title, strlen(title));
+    ZEMU_LOGF(50, "%s\n", print);
+    MEMZERO(print, sizeof(print));
+    array_to_hexstr(print, sizeof(print), buffer->ptr, buffer->len);
+    ZEMU_LOGF(1000, "%s\n", print);
+#else
+    printf("%s %d: ", title, buffer->len);
+    for (uint16_t i = 0; i < buffer->len; i++) {
+        printf("%02x", buffer->ptr[i]);
+    }
+    printf("\n");
+#endif
+}
 
-// void print_buffer_u8(bytes_t *buffer, const char *title) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(50, "%s\n", title);
-//     char print[1000] = {0};
-//     array_to_hexstr(print, sizeof(print), buffer->ptr, buffer->len);
-//     ZEMU_LOGF(1000, "%s\n", print);
-// #else
-//     printf("%s %d: [", title, buffer->len);
-//     for (uint16_t i = 0; i < buffer->len; i++) {
-//         printf("%d, ", buffer->ptr[i]);
-//     }
-//     printf("]\n");
-// #endif
-// }
+void print_buffer_u8(bytes_t *buffer, const char *title) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, title, strlen(title));
+    ZEMU_LOGF(50, "%s\n", print);
+    MEMZERO(print, sizeof(print));
+    array_to_hexstr(print, sizeof(print), buffer->ptr, buffer->len);
+    ZEMU_LOGF(1000, "%s\n", print);
+#else
+    printf("%s %d: [", title, buffer->len);
+    for (uint16_t i = 0; i < buffer->len; i++) {
+        printf("%d, ", buffer->ptr[i]);
+    }
+    printf("]\n");
+#endif
+}
 
-// void print_buffer_str(bytes_t *buffer, const char *title) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(50, "%s\n", title);
-//     char print[1000] = {0};
-//     array_to_hexstr(print, sizeof(print), buffer->ptr, buffer->len);
-//     ZEMU_LOGF(1000, "%s\n", print);
-// #else
-//     uint8_t buff[1000] = {0};
-//     memcpy(buff, buffer->ptr, buffer->len);
-//     printf("%s %s\n", title, buff);
-// #endif
-// }
+void print_buffer_str(bytes_t *buffer, const char *title) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, title, strlen(title));
+    ZEMU_LOGF(50, "%s\n", print);
+    MEMZERO(print, sizeof(print));
+    array_to_hexstr(print, sizeof(print), buffer->ptr, buffer->len);
+    ZEMU_LOGF(1000, "%s\n", print);
+#else
+    uint8_t buff[1000] = {0};
+    memcpy(buff, buffer->ptr, buffer->len);
+    printf("%s %s\n", title, buff);
+#endif
+}
 
 void print_string(const char *str) {
 #if defined(LEDGER_SPECIFIC)
     char print[1000] = {0};
     MEMCPY(print, str, strlen(str));
-    ZEMU_LOGF(100, "%s\n", str);
+    ZEMU_LOGF(100, "%s\n", print);
 #else
-    printf("%s\n", str);
+    // printf("%s\n", str);
 #endif
 }
 
-// void print_string_title(const char *str, const char *title) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(100, "%s: %s\n", title, str);
-// #else
-//     printf("%s: %s\n", title, str);
-// #endif
-// }
+void print_string_title(const char *str, const char *title) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, title, strlen(title));
+    MEMCPY(print + strlen(title), str, strlen(str));
+    ZEMU_LOGF(100, "%s\n", print);
+#else
+    printf("%s: %s\n", title, str);
+#endif
+}
 
-// void print_u8(const char *str, uint8_t val) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(100, "%s: %d\n", str, val);
-// #else
-//     printf("%s: %d\n", str, val);
-// #endif
-// }
+void print_u8(const char *str, uint8_t val) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, str, strlen(str));
+    MEMCPY(print + strlen(str), ": ", 2);
+    MEMCPY(print + strlen(str) + 2, &val, sizeof(val));
+    ZEMU_LOGF(100, "%s\n", print);
+#else
+    printf("%s: %d\n", str, val);
+#endif
+}
 
-// void print_u16(const char *str, uint16_t val) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(100, "%s: %d\n", str, val);
-// #else
-//     printf("%s: %d\n", str, val);
-// #endif
-// }
+void print_u16(const char *str, uint16_t val) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, str, strlen(str));
+    MEMCPY(print + strlen(str), ": ", 2);
+    MEMCPY(print + strlen(str) + 2, &val, sizeof(val));
+    ZEMU_LOGF(100, "%s\n", print);
+#else
+    printf("%s: %d\n", str, val);
+#endif
+}
 
-// void print_u32(const char *str, uint32_t val) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(100, "%s: %d\n", str, val);
-// #else
-//     printf("%s: %u\n", str, val);
-// #endif
-// }
+void print_u32(const char *str, uint32_t val) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, str, strlen(str));
+    MEMCPY(print + strlen(str), ": ", 2);
+    MEMCPY(print + strlen(str) + 2, &val, sizeof(val));
+    ZEMU_LOGF(100, "%s\n", print);
+#else
+    printf("%s: %u\n", str, val);
+#endif
+}
 
-// void print_u64(const char *str, uint64_t val) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(100, "%s: %lu\n", str, val);
-// #else
-//     printf("%s: %llu\n", str, val);
-// #endif
-// }
+void print_u64(const char *str, uint64_t val) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, str, strlen(str));
+    MEMCPY(print + strlen(str), ": ", 2);
+    MEMCPY(print + strlen(str) + 2, &val, sizeof(val));
+    ZEMU_LOGF(100, "%s\n", print);
+#else
+    printf("%s: %llu\n", str, val);
+#endif
+}
 
-// void print_u64_hex(const char *str, uint64_t val) {
-// #if defined(LEDGER_SPECIFIC)
-//     ZEMU_LOGF(100, "%s: %lu\n", str, val);
-// #else
-//     printf("%s: 0x%llx\n", str, val);
-// #endif
-// }
+void print_u64_hex(const char *str, uint64_t val) {
+#if defined(LEDGER_SPECIFIC)
+    char print[1000] = {0};
+    MEMCPY(print, str, strlen(str));
+    MEMCPY(print + strlen(str), ": ", 2);
+    MEMCPY(print + strlen(str) + 2, &val, sizeof(val));
+    ZEMU_LOGF(100, "%s\n", print);
+#else
+    printf("%s: 0x%llx\n", str, val);
+#endif
+}
