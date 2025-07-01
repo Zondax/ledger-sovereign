@@ -278,6 +278,10 @@ parser_error_t get_root_hash(const merkle_proof_t *metadata, uint8_t *hash) {
     CHECK_INPUT(metadata);
     CHECK_INPUT(hash);
 
+    if (metadata->lemmas.entries == 0) {
+        return parser_unexpected_buffer_end;
+    }
+
     proof_t proof = {0};
     proof.leaves = metadata->leaves;
     proof.lemmas = metadata->lemmas;
@@ -294,6 +298,12 @@ parser_error_t get_root_hash(const merkle_proof_t *metadata, uint8_t *hash) {
     return parser_ok;
 }
 
+/**
+ * @brief Verify the merkle proofs.
+ *
+ * @param metadata Pointer to the merkle_proof_t structure containing the necessary data.
+ * @return parser_error_t Error code indicating the result of the operation.
+ */
 parser_error_t verify_merkle_proofs(const merkle_proof_t *metadata) {
     CHECK_INPUT(metadata);
     CHECK_INPUT(metadata->root_hash.ptr);

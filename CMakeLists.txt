@@ -113,6 +113,13 @@ if(ENABLE_SANITIZERS)
 
     string(APPEND CMAKE_C_FLAGS " -fstack-protector-strong")
     string(APPEND CMAKE_CXX_FLAGS " -fstack-protector-strong")
+
+    # Disable sanitizers for crypto_helper.c as it uses picohash, which triggers many sanitizer warnings.
+    # This is a workaround to allow using sanitizers for the rest of the codebase during fuzzing.
+    set_property(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/app/src/crypto_helper.c
+        APPEND PROPERTY
+        COMPILE_FLAGS "-fno-sanitize=address,undefined,integer,bounds"
+    )
 endif()
 
 set (RETRIEVE_MAJOR_CMD

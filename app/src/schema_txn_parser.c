@@ -482,7 +482,11 @@ parser_error_t schema_parser_transaction(parser_context_t *ctx, parser_tx_t *txO
     uint64_t root_index = 0;
     CHECK_ERROR(schema_get_unsigned_transaction_index(txObj, &root_index));
 
-    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, root_index));
+    if (root_index > UINT32_MAX) {
+        return parser_value_out_of_range;
+    }
+
+    CHECK_ERROR(schema_display_generic_by_index(ctx, txObj, (uint32_t)root_index));
 
     txObj->unsigned_transaction_raw.buffer.len = ctx->offset - offset_mem_txn;
 

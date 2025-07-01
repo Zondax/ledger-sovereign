@@ -61,6 +61,15 @@ parser_error_t schema_move_leaf_offset(merkle_leaves_data_t *leaves, uint64_t in
     uint32_t data_length = 0;
     for (uint64_t i = 0; i < index; i++) {
         CHECK_ERROR(read_u32(&leaves->data, &data_length));
+
+        if (data_length > UINT16_MAX) {
+            return parser_unexpected_buffer_end;
+        }
+
+        if (leaves->data.offset > UINT16_MAX - data_length) {
+            return parser_unexpected_buffer_end;
+        }
+
         if (leaves->data.offset + data_length > leaves->data.buffer.len) {
             return parser_unexpected_buffer_end;
         }

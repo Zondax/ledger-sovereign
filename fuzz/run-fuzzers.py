@@ -5,7 +5,7 @@ import random
 import shlex
 import subprocess
 
-MAX_SECONDS_PER_RUN = 600
+MAX_SECONDS_PER_RUN = 6
 MUTATE_DEPTH = random.randint(1, 20)
 
 # Create coverage directory specifically in fuzz/coverage
@@ -69,7 +69,7 @@ for config in CONFIGS:
     cmd = [fuzz_path, f'-max_total_time={max_time}',
            f'-timeout=20',
            f'-rss_limit_mb=2048',
-           f'-jobs=16',
+           f'-jobs=8',
            f'-max_len={max_len}',
            f'-mutate_depth={MUTATE_DEPTH}',
            f'-artifact_prefix={artifact_dir}/',

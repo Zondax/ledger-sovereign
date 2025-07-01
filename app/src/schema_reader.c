@@ -16,6 +16,8 @@
 
 #include "schema_reader.h"
 
+#include <stdint.h>
+
 #include "borsh.h"
 #include "crypto_helper.h"
 #include "schema_helper.h"
@@ -812,6 +814,11 @@ parser_error_t schema_merkle_proofs_read(parser_context_t *ctx, parser_tx_t *txO
 
     // read lemmas
     CHECK_ERROR(read_u32(ctx, &txObj->merkle_proof.lemmas.entries));
+
+    if (txObj->merkle_proof.lemmas.entries > UINT16_MAX / 32) {
+        return parser_value_out_of_range;
+    }
+
     txObj->merkle_proof.lemmas.data.buffer.ptr = ctx->buffer.ptr + ctx->offset;
     txObj->merkle_proof.lemmas.data.buffer.len = txObj->merkle_proof.lemmas.entries * 32;
     CTX_CHECK_AND_ADVANCE(ctx, txObj->merkle_proof.lemmas.data.buffer.len);

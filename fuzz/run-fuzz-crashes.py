@@ -58,11 +58,35 @@ def analyze_crash(fuzzer, crash_file, fuzz_path):
     print(f"Command: {' '.join(shlex.quote(c) for c in cmd)}")
     
     try:
+        # Read crash file data
+        with open(crash_file, 'rb') as f:
+            crash_data = f.read()
+        
         # Run with timeout and capture output
         with open(log_file, 'w') as log:
             log.write(f"Crash analysis for: {crash_file}\n")
             log.write(f"Command: {' '.join(cmd)}\n")
             log.write(f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            log.write("=" * 50 + "\n\n")
+            
+            # Log the crash data blob
+            log.write("CRASH DATA BLOB:\n")
+            log.write(f"Size: {len(crash_data)} bytes\n")
+            
+            # Hex string format
+            hex_string = ''.join(f'{b:02x}' for b in crash_data)
+            log.write(f'\nBlob: "{hex_string}"\n')
+            
+            log.write("\nHex dump:\n")
+            # Write hex dump with ASCII representation
+            for i in range(0, len(crash_data), 16):
+                hex_part = ' '.join(f'{b:02x}' for b in crash_data[i:i+16])
+                ascii_part = ''.join(chr(b) if 32 <= b <= 126 else '.' for b in crash_data[i:i+16])
+                log.write(f"{i:08x}: {hex_part:<48} |{ascii_part}|\n")
+            
+            log.write("\nRaw bytes (Python repr):\n")
+            log.write(repr(crash_data))
+            log.write("\n")
             log.write("=" * 50 + "\n\n")
             log.flush()
             
