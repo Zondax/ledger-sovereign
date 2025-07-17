@@ -91,7 +91,8 @@ std::vector<testcase_t> GetJsonTestCases(std::string jsonFile) {
             obj[i]["leaves_index"].get<std::string>(), obj[i]["lemmas"].get<std::string>(),
             obj[i]["tree_size"].get<std::string>(), obj[i]["root_hash"].get<std::string>(),
             obj[i]["root_type_index"].get<std::string>(), obj[i]["chain_data"].get<std::string>(),
-            obj[i]["extra_data_hash"].get<std::string>(), obj[i]["chain_hash"].get<std::string>(), outputs, outputs_expert});
+            obj[i]["extra_data_hash"].get<std::string>(), obj[i]["chain_hash"].get<std::string>(), outputs,
+            outputs_expert});
     }
 
     return answer;

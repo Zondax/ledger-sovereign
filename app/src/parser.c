@@ -86,8 +86,8 @@ static parser_error_t checkSanity(uint8_t numItems, uint8_t displayIdx) {
     return parser_ok;
 }
 
-parser_error_t page_title(parser_tx_t *txObj, char *outKey, uint16_t outKeyLen, const char *title, primitive_t *primitive,
-                          parser_context_t *data_context) {
+parser_error_t page_title(parser_tx_t *txObj, char *outKey, uint16_t outKeyLen, const char *title,
+                          primitive_t *primitive, parser_context_t *data_context) {
     CHECK_INPUT(outKey);
     CHECK_INPUT(title);
 
@@ -130,8 +130,8 @@ static uint8_t calculate_page_count(const char *text, uint16_t maxCharsPerPage) 
     return pageCount;
 }
 
-parser_error_t page_item(parser_tx_t *txObj, char *outValue, uint16_t outValueLen, const char *title, primitive_t *primitive,
-                         parser_context_t *data_context, uint8_t pageIdx, uint8_t *pageCount) {
+parser_error_t page_item(parser_tx_t *txObj, char *outValue, uint16_t outValueLen, const char *title,
+                         primitive_t *primitive, parser_context_t *data_context, uint8_t pageIdx, uint8_t *pageCount) {
     CHECK_INPUT(outValue);
     CHECK_INPUT(title);
     CHECK_INPUT(primitive);
@@ -188,8 +188,8 @@ parser_error_t page_item(parser_tx_t *txObj, char *outValue, uint16_t outValueLe
     return parser_ok;
 }
 
-parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char *outKey, uint16_t outKeyLen, char *outVal,
-                              uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
+parser_error_t parser_getItem(const parser_tx_t *txObj, uint8_t displayIdx, char *outKey, uint16_t outKeyLen,
+                              char *outVal, uint16_t outValLen, uint8_t pageIdx, uint8_t *pageCount) {
     UNUSED(pageIdx);
     *pageCount = 1;
     uint8_t numItems = 0;

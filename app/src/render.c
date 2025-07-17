@@ -153,8 +153,8 @@ parser_error_t render_fixed_point(parser_context_t *ctx, fixed_point_display_t d
     }
 }
 
-parser_error_t render_primitive_integer(parser_context_t *ctx, integer_display_t display, uint128_t value, char *outValue,
-                                        uint16_t outValueLen) {
+parser_error_t render_primitive_integer(parser_context_t *ctx, integer_display_t display, uint128_t value,
+                                        char *outValue, uint16_t outValueLen) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(outValue);
     MEMZERO(outValue, outValueLen);
@@ -177,7 +177,8 @@ parser_error_t render_primitive_integer(parser_context_t *ctx, integer_display_t
     return parser_ok;
 }
 
-parser_error_t render_integer(parser_context_t *ctx, primitive_integer_t *primitive, char *outValue, uint16_t outValueLen) {
+parser_error_t render_integer(parser_context_t *ctx, primitive_integer_t *primitive, char *outValue,
+                              uint16_t outValueLen) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(primitive);
 

@@ -27,7 +27,8 @@
  * @param found Output: set to true if the index is found, false otherwise.
  * @return parser_error_t Error code indicating success or failure.
  */
-parser_error_t schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec, bool *found) {
+parser_error_t schema_find_index(uint64_t index_leaf, merkle_leaves_indices_t *indices, uint64_t *index_vec,
+                                 bool *found) {
     CHECK_INPUT(indices);
     CHECK_INPUT(index_vec);
 

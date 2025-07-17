@@ -70,7 +70,8 @@ static uint32_t next_smaller_po2(uint32_t n) {
  * @param tree_size The output buffer for the computed tree size.
  * @return parser_error_t Error code indicating the result of the operation.
  */
-parser_error_t compute_tree_size(uint32_t num_right_siblings, uint32_t index_of_last_included_leaf, uint32_t *tree_size) {
+parser_error_t compute_tree_size(uint32_t num_right_siblings, uint32_t index_of_last_included_leaf,
+                                 uint32_t *tree_size) {
     uint32_t index_of_final_node = index_of_last_included_leaf;
     uint32_t mask = 1;
     uint32_t remaining_right_siblings = num_right_siblings;

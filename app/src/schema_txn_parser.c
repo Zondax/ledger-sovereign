@@ -30,7 +30,8 @@ bool ui_expert_mode = false;
 
 #define NONE_STRING "None"
 
-parser_error_t append_structured_show_as_title(const bytes_t *structured_show_as, uint32_t field_index, bool *remove_title) {
+parser_error_t append_structured_show_as_title(const bytes_t *structured_show_as, uint32_t field_index,
+                                               bool *remove_title) {
     CHECK_INPUT(structured_show_as);
     CHECK_INPUT(remove_title);
 
@@ -45,7 +46,8 @@ parser_error_t append_structured_show_as_title(const bytes_t *structured_show_as
     return parser_ok;
 }
 
-parser_error_t schema_display_integer(parser_context_t *ctx, primitive_integer_t *primitive, parser_context_t *ctx_to_push) {
+parser_error_t schema_display_integer(parser_context_t *ctx, primitive_integer_t *primitive,
+                                      parser_context_t *ctx_to_push) {
     CHECK_INPUT(ctx);
     CHECK_INPUT(primitive);
     CHECK_INPUT(ctx_to_push);
@@ -103,7 +105,8 @@ parser_error_t schema_display_integer(parser_context_t *ctx, primitive_integer_t
                     return parser_unexpected_type;
                 case FIXED_POINT_DISPLAY_FROM_SIBLING_FIELD:
                     // get offset
-                    if (ctx->offset + primitive->display.fixed_point.from_sibling_field.byte_offset >= ctx->buffer.len) {
+                    if (ctx->offset + primitive->display.fixed_point.from_sibling_field.byte_offset >=
+                        ctx->buffer.len) {
                         return parser_unexpected_buffer_end;
                     }
                     len_to_push += primitive->display.fixed_point.from_sibling_field.byte_offset + 1;
@@ -239,7 +242,8 @@ parser_error_t schema_display_struct(parser_context_t *ctx, parser_tx_t *txObj) 
         MEMZERO(&named_field, sizeof(named_field_t));
         CHECK_ERROR(read_named_field(&struct_type.named_fields, &named_field));
 
-        bool show_field = should_show_field(&named_field.value, named_field.silent, named_field.is_expert, ui_expert_mode);
+        bool show_field =
+            should_show_field(&named_field.value, named_field.silent, named_field.is_expert, ui_expert_mode);
 
         bool remove_title = false;
         if (show_field) {
