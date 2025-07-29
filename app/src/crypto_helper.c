@@ -86,8 +86,8 @@ zxerr_t crypto_computeAddress(uint8_t *address, uint16_t addressLen, const uint8
 
     uint8_t sha[PK_LEN_25519] = {0};
     CHECK_ZXERR(crypto_sha256_one_shot(sha, sizeof(sha), pubkey, PK_LEN_25519));
-    CHECK_ZXERR(
-        bech32EncodeFromBytes((char *)address, ADDRESS_MAX_LENGTH, HRP, sha, PUBKEY_SHA_LEN, 1, BECH32_ENCODING_BECH32M));
+    CHECK_ZXERR(bech32EncodeFromBytes((char *)address, ADDRESS_MAX_LENGTH, HRP, sha, PUBKEY_SHA_LEN, 1,
+                                      BECH32_ENCODING_BECH32M));
 
     return zxerr_ok;
 }

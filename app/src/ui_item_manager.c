@@ -96,7 +96,8 @@ parser_error_t create_item_title(uint16_t index_start, uint16_t index_end, char 
 
     for (uint16_t i = index_start; i < index_end; i++) {
         uint16_t output_str_len = strlen(output);
-        CHECK_ERROR(get_item_buffer_content(&item_title_buffer, i, output + output_str_len, output_len - output_str_len));
+        CHECK_ERROR(
+            get_item_buffer_content(&item_title_buffer, i, output + output_str_len, output_len - output_str_len));
         if (i < index_end - 1) {
             strncat(output, SEPARATOR_TITLE_DISPLAY, strlen(SEPARATOR_TITLE_DISPLAY));
         }

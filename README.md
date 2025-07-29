@@ -72,7 +72,7 @@ then run:
 - This project requires Ledger firmware 2.0
     - The current repository keeps track of Ledger's SDK but it is possible to override it by changing the git submodule.
 
-*Warning*: Some IDEs may not use the same python interpreter or virtual enviroment as the one you used when running `pip`.
+*Warning*: Some IDEs may not use the same python interpreter or virtual environment as the one you used when running `pip`.
 If you see conan is not found, check that you installed the package in the same interpreter as the one that launches `cmake`.
 
 ## How to build ?
@@ -179,7 +179,7 @@ Many of our integration tests expect the device to be configured with a known te
 
 - Enter your pin if necessary
 
-- Run `make dev_ca`. The device will receive a development certificate to avoid constant manual confirmations.
+- Run `make dev_caS2`. The device will receive a development certificate to avoid constant manual confirmations.
 
 
 ### Loading into your development device

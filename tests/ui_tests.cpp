@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 #include <hexutils.h>
-#include <json/json.h>
 
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 #include "app_mode.h"
 #include "gmock/gmock.h"
@@ -61,8 +61,7 @@ class JsonTestsA : public ::testing::TestWithParam<testcase_t> {
 std::vector<testcase_t> GetJsonTestCases(std::string jsonFile) {
     auto answer = std::vector<testcase_t>();
 
-    Json::CharReaderBuilder builder;
-    Json::Value obj;
+    nlohmann::json obj;
 
     std::string fullPathJsonFile = std::string(TESTVECTORS_DIR) + jsonFile;
 
@@ -72,27 +71,28 @@ std::vector<testcase_t> GetJsonTestCases(std::string jsonFile) {
     }
 
     // Retrieve all test cases
-    JSONCPP_STRING errs;
-    Json::parseFromStream(builder, inFile, &obj, &errs);
+    obj = nlohmann::json::parse(inFile);
     std::cout << "Number of testcases: " << obj.size() << std::endl;
 
     for (int i = 0; i < obj.size(); i++) {
         auto outputs = std::vector<std::string>();
         for (auto s : obj[i]["output"]) {
-            outputs.push_back(s.asString());
+            outputs.push_back(s.get<std::string>());
         }
 
         auto outputs_expert = std::vector<std::string>();
         for (auto s : obj[i]["output_expert"]) {
-            outputs_expert.push_back(s.asString());
+            outputs_expert.push_back(s.get<std::string>());
         }
 
-        answer.push_back(
-            testcase_t{obj[i]["index"].asUInt64(), obj[i]["name"].asString(), obj[i]["transaction_blob"].asString(),
-                       obj[i]["leaves_data"].asString(), obj[i]["leaves_index"].asString(), obj[i]["lemmas"].asString(),
-                       obj[i]["tree_size"].asString(), obj[i]["root_hash"].asString(), obj[i]["root_type_index"].asString(),
-                       obj[i]["chain_data"].asString(), obj[i]["extra_data_hash"].asString(),
-                       obj[i]["chain_hash"].asString(), outputs, outputs_expert});
+        answer.push_back(testcase_t{
+            obj[i]["index"].get<uint64_t>(), std::string("test_") + std::to_string(obj[i]["index"].get<uint64_t>()),
+            obj[i]["transaction_blob"].get<std::string>(), obj[i]["leaves_data"].get<std::string>(),
+            obj[i]["leaves_index"].get<std::string>(), obj[i]["lemmas"].get<std::string>(),
+            obj[i]["tree_size"].get<std::string>(), obj[i]["root_hash"].get<std::string>(),
+            obj[i]["root_type_index"].get<std::string>(), obj[i]["chain_data"].get<std::string>(),
+            obj[i]["extra_data_hash"].get<std::string>(), obj[i]["chain_hash"].get<std::string>(), outputs,
+            outputs_expert});
     }
 
     return answer;

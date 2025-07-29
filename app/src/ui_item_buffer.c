@@ -281,7 +281,8 @@ parser_error_t get_item_buffer_range_length(item_buffer_t *buffer, uint8_t index
     return parser_ok;
 }
 
-parser_error_t get_item_buffer_range(item_buffer_t *buffer, uint8_t index_start, uint8_t index_end, item_buffer_t *output) {
+parser_error_t get_item_buffer_range(item_buffer_t *buffer, uint8_t index_start, uint8_t index_end,
+                                     item_buffer_t *output) {
     CHECK_INPUT(buffer);
     CHECK_INPUT(output);
 

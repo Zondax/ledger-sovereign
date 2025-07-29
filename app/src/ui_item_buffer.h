@@ -28,6 +28,7 @@ parser_error_t get_item_buffer_content(item_buffer_t *buffer, uint8_t index, cha
 parser_error_t get_item_buffer_content_length(item_buffer_t *buffer, uint8_t index, size_t *length);
 parser_error_t get_item_buffer_range_length(item_buffer_t *buffer, uint8_t index_start, uint8_t index_end,
                                             size_t *total_length);
-parser_error_t get_item_buffer_range(item_buffer_t *buffer, uint8_t index_start, uint8_t index_end, item_buffer_t *output);
+parser_error_t get_item_buffer_range(item_buffer_t *buffer, uint8_t index_start, uint8_t index_end,
+                                     item_buffer_t *output);
 parser_error_t remove_first_separator(item_buffer_t *buffer, char *output, uint16_t output_len);
 parser_error_t remove_last_separator(item_buffer_t *buffer, char *output, uint16_t output_len);

@@ -749,7 +749,8 @@ parser_error_t compute_internal_data_hash(parser_tx_t *txObj, uint8_t *internal_
     crypto_sha256_init();
     crypto_sha256_update(txObj->schema.root_type_indices.complete_borsh_data.ptr,
                          txObj->schema.root_type_indices.complete_borsh_data.len);
-    crypto_sha256_update(txObj->schema.chain_data.complete_borsh_data.ptr, txObj->schema.chain_data.complete_borsh_data.len);
+    crypto_sha256_update(txObj->schema.chain_data.complete_borsh_data.ptr,
+                         txObj->schema.chain_data.complete_borsh_data.len);
     crypto_sha256_final(internal_data_hash);
 
     return parser_ok;
