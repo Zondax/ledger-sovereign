@@ -47,12 +47,8 @@ jobs:
     container:
       image: zondax/ledger-app-builder:latest
       options: --user root
-      env:
-        BOLOS_SDK: /opt/nanosplus-secure-sdk
-        HOME: /root
-        CARGO_HOME: ${{ needs.setup_rust.outputs.cargo_home }}
-        RUSTUP_HOME: ${{ needs.setup_rust.outputs.rustup_home }}
-        PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${{ needs.setup_rust.outputs.cargo_home }}/bin
+    env:
+      BOLOS_SDK: /opt/nanosplus-secure-sdk
     outputs:
       size: ${{steps.build.outputs.size}}
     steps:
@@ -121,10 +117,6 @@ jobs:
       options: --user root
       env:
         BOLOS_SDK: /opt/nanosplus-secure-sdk
-        HOME: /root
-        CARGO_HOME: ${{ needs.setup_rust.outputs.cargo_home }}
-        RUSTUP_HOME: ${{ needs.setup_rust.outputs.rustup_home }}
-        PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${{ needs.setup_rust.outputs.cargo_home }}/bin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -166,10 +158,6 @@ jobs:
       options: --user root
       env:
         BOLOS_SDK: /opt/stax-secure-sdk
-        HOME: /root
-        CARGO_HOME: ${{ needs.setup_rust.outputs.cargo_home }}
-        RUSTUP_HOME: ${{ needs.setup_rust.outputs.rustup_home }}
-        PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${{ needs.setup_rust.outputs.cargo_home }}/bin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -211,10 +199,6 @@ jobs:
       options: --user root
       env:
         BOLOS_SDK: /opt/flex-secure-sdk
-        HOME: /root
-        CARGO_HOME: ${{ needs.setup_rust.outputs.cargo_home }}
-        RUSTUP_HOME: ${{ needs.setup_rust.outputs.rustup_home }}
-        PATH: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${{ needs.setup_rust.outputs.cargo_home }}/bin
     steps:
       - name: Checkout
         uses: actions/checkout@v4
